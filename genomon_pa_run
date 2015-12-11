@@ -1,0 +1,84 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Dec 02 17:43:52 2015
+
+@author: okada
+
+$Id: genomon_pa_run 89 2015-12-11 10:04:49Z aokada $
+$Rev: 89 $
+"""
+def main():
+    
+    from genomon_post_analysis import capture
+    from genomon_post_analysis import tools
+    import os
+    import argparse
+    import glob
+
+    parser = argparse.ArgumentParser(prog = "genomon_post_analysis")
+    
+    parser.add_argument("--version", action = "version", version = "genomon_post_analysis_v0.1")
+    parser.add_argument('mode', choices=['mutation', 'sv'], help = "analysis type")
+    parser.add_argument('input_file_pattern', help = "result files ex.'./*/*.txt'", type = str)
+    parser.add_argument("output_dir", help = "output file path", type = str)
+    parser.add_argument("genomon_root", help = "output file path", type = str)
+    parser.add_argument("--task_config_file", help = "config file", type = str, default = "")
+    parser.add_argument("--genomon_config_file", help = "config file", type = str, default = "")
+
+    args = parser.parse_args()
+    
+    output_dir = args.output_dir + "/" + args.mode
+    
+    if (os.path.exists(args.output_dir) == False):
+        os.mkdir(args.output_dir)
+    if (os.path.exists(output_dir) == False):
+        os.mkdir(output_dir)
+    if (os.path.exists(output_dir + "/capture") == False):
+        os.mkdir(output_dir + "/capture")
+    if (os.path.exists(output_dir + "/log") == False):
+        os.mkdir(output_dir + "/log")
+    if (os.path.exists(output_dir + "/bam") == False):
+        os.mkdir(output_dir + "/bam")
+    if (os.path.exists(output_dir + "/bam_script") == False):
+        os.mkdir(output_dir + "/bam_script")
+            
+    # config
+    if len(args.task_config_file) > 0:
+        [t_config, t_conf_file] = tools.load_config(args.task_config_file)
+    else:
+        [t_config, t_conf_file] = tools.load_config("")
+
+    if len(args.genomon_config_file) > 0:
+        [g_config, g_conf_file] = tools.load_config(args.genomon_config_file)
+    else:
+        [g_config, g_conf_file] = tools.load_config("")
+
+    files = glob.glob(args.input_file_pattern.strip("\"\'").rstrip("\"\'"))
+    
+    
+    files_capt = []
+    files_pick = []
+
+    for f in files:
+
+        print f
+        if (os.path.getsize(f) <= 0):
+            continue
+
+        ID = tools.getID(f, args.mode, t_config)
+        yml = args.genomon_root + "/sv/config/" + ID + ".yaml"
+        f_capt = "%s/capture/capture_%s.bat" % (output_dir, ID)
+        capture.write_capture_bat(f, f_capt, output_dir, ID, args.mode, yml, t_config)
+        files_capt.append(f_capt)
+
+        f_pick = "%s/bam_script/pickup.%s.sh" % (output_dir, ID)
+        capture.write_pickup_script(f, f_pick, output_dir, ID, args.mode, yml, t_config, g_config)
+        files_pick.append(f_pick)
+    
+    capture.merge_capture_bat(files_capt, output_dir + "/capture/capture.bat", True)
+    capture.merge_pickup_script(files_pick, output_dir + "/bam_script/pickup.sh")
+    capture.merge_result(files, output_dir + "/merge.csv", args.mode, t_config)
+                
+if __name__ == "__main__":
+    main()
+    
