@@ -4,25 +4,19 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: genomon_pa_hello 87 2015-12-11 09:30:30Z aokada $
-$Rev: 87 $
+$Id: genomon_pa_hello 92 2015-12-14 08:06:48Z aokada $
+$Rev: 92 $
 """
 
 def main():
     import argparse
-    import os
     from genomon_post_analysis import capture
     
     parser = argparse.ArgumentParser(prog = "genomon_post_analysis")
     parser.add_argument("--config_file", help = "config file", type = str, default = "")
     args = parser.parse_args()
 
-    if len(args.config_file) > 0:
-        config_file = os.path.abspath(args.config_file)
-    else:
-        config_file = ""
-
-    capture.hello(config_file)
+    capture.hello(args.config_file)
 
 if __name__ == "__main__":
     main()

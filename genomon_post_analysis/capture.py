@@ -4,8 +4,8 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: capture.py 89 2015-12-11 10:04:49Z aokada $
-$Rev: 89 $
+$Id: capture.py 92 2015-12-14 08:06:48Z aokada $
+$Rev: 92 $
 """
 
 def write_capture_bat(data_file, output_file, output_dir, ID, mode, yml, task_config):
@@ -27,7 +27,10 @@ goto {chr}:{start}-{end}
 snapshot {name}
 """
 
-    [data, colsname] = tools.resultfile_load_mini(data_file, mode, task_config)
+    [data, colsname] = tools.load_data_range(data_file, mode, task_config)
+    if len(data) == 0:
+        return False
+        
     [bam_tumor, bam_normal] = tools.load_yaml(yml)
     
     use_pickup_bam = task_config.getboolean("capture", "use_pickup_bam")
@@ -86,6 +89,9 @@ snapshot {name}
         f.write(cmd)   
         f.close()
     
+        return True
+    else:
+        return False
   
 def write_pickup_script(data_file, output_file, output_dir, ID, mode, yml, task_config, genomon_config):
 
@@ -124,7 +130,10 @@ rm {output_bam}.temp.bam
     cmd_rm_bed = """
 rm {bed}
 """
-    [data, colsname] = tools.resultfile_load_mini(data_file, mode, task_config)
+    [data, colsname] = tools.load_data_range(data_file, mode, task_config)
+    if len(data) == 0:
+        return False
+        
     [bam_tumor, bam_normal] = tools.load_yaml(yml)
     
     width = task_config.getint("pickup", "pickup_width")
@@ -186,7 +195,11 @@ rm {bed}
         f_sh.write(bed3_text)
         f_sh.write(cmd_text)
         f_sh.close()
-
+        
+        return True
+    else:
+        return False
+        
 def hello(config_file):
 
     from genomon_post_analysis import tools
@@ -195,7 +208,7 @@ def hello(config_file):
     print "hello genomon post analysis!!!"
     print "******************************"
     
-    [config, config_file2] = tools.resultfile_load_mini(config_file)
+    [config, config_file2] = tools.load_config(config_file)
     if config == None:
         print "config_file is not exists:%s" % config_file2
         return
@@ -231,7 +244,6 @@ def merge_capture_bat(files, output_file, delete_flg):
     f.write(write_text)
     f.close()
 
-
 def merge_pickup_script(files, output_file):
 
     import os
@@ -253,7 +265,6 @@ def merge_pickup_script(files, output_file):
     
     os.chmod(output_file, 0744)
 
-
 def merge_result(files, output_file, mode, task_config):
 
     from genomon_post_analysis import tools
@@ -267,7 +278,7 @@ def merge_result(files, output_file, mode, task_config):
             continue
 
         ID = tools.getID(result_file, mode, task_config) 
-        data = tools.resultfile_load_all(result_file, ID, mode, task_config)
+        data = tools.load_data_all(result_file, ID, mode, task_config)
 
         if len(data) == 0:
             continue
