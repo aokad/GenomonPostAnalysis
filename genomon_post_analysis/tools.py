@@ -4,8 +4,8 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: tools.py 93 2015-12-14 08:18:26Z aokada $
-$Rev: 93 $
+$Id: tools.py 98 2015-12-15 08:46:50Z aokada $
+$Rev: 98 $
 """
     
 def load_data_range(data_file, mode, config):
@@ -155,8 +155,14 @@ def load_yaml(f):
     y_load = yaml.load(yml)
     yml.close()
     
-    bam_normal = y_load["matched_control"]["path_to_bam"]
-    bam_tumor = y_load["target"]["path_to_bam"]
+    # normal only
+    if y_load["matched_control"]["use"] == False:
+        bam_normal = y_load["target"]["path_to_bam"]
+        bam_tumor = ""
+
+    else:
+        bam_normal = y_load["matched_control"]["path_to_bam"]
+        bam_tumor = y_load["target"]["path_to_bam"]
     
     return [bam_tumor, bam_normal]
     

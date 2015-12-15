@@ -4,8 +4,8 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: capture.py 92 2015-12-14 08:06:48Z aokada $
-$Rev: 92 $
+$Id: capture.py 100 2015-12-15 09:09:58Z aokada $
+$Rev: 100 $
 """
 
 def write_capture_bat(data_file, output_file, output_dir, ID, mode, yml, task_config):
@@ -32,6 +32,9 @@ snapshot {name}
         return False
         
     [bam_tumor, bam_normal] = tools.load_yaml(yml)
+    
+    if len(bam_tumor) == 0:
+        return False
     
     use_pickup_bam = task_config.getboolean("capture", "use_pickup_bam")
     
@@ -67,7 +70,7 @@ snapshot {name}
         fname = "{0}_{1}_{2}_{3}_{4}".format(out_tumor_name, chr1, start, chr2, end)
         if (fname in capt_list) == False:
             capt_list.append(fname)
-
+            
             if (long(end) - long(start)) < (width / 2):
                 capt_text += cmd_capt.format(chr = chr1, start = start - width, end = start + width, name = fname + ".png")
             else:
@@ -136,6 +139,9 @@ rm {bed}
         
     [bam_tumor, bam_normal] = tools.load_yaml(yml)
     
+    if len(bam_tumor) == 0:
+        return False
+        
     width = task_config.getint("pickup", "pickup_width")
     markdup_bam_suffix = task_config.get("pickup", "markdup_bam_suffix")
     pickup_bam_suffix = task_config.get("pickup", "pickup_bam_suffix")
@@ -146,6 +152,9 @@ rm {bed}
     ref_fa = genomon_config.get("REFERENCE", "ref_fasta")
 
     # output file name
+    if os.path.exists(output_dir + "/bam/" + ID) == False:
+        os.mkdir(output_dir + "/bam/" + ID)
+
     out_normal_name = output_dir + "/bam/" + ID + "/" + os.path.basename(bam_normal).replace(markdup_bam_suffix, "")
     out_tumor_name = output_dir + "/bam/" + ID + "/" + os.path.basename(bam_tumor).replace(markdup_bam_suffix, "")
     
