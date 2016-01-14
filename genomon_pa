@@ -16,7 +16,7 @@ def main():
     from genomon_post_analysis import run_conf
     import sys
 
-    message = "$ genomon_post_analysis\nusage: genomon_pa {run, igv, bam, merge, hello} OPTIONS"
+    message = "$ genomon_post_analysis\nusage: genomon_pa {run, igv, bam, merge, conf} OPTIONS"
 
     if len(sys.argv) < 2:
         print (message)
