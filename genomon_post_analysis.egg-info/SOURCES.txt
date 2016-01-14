@@ -1,9 +1,14 @@
-genomon_pa_hello
-genomon_pa_run
+genomon_pa
+genomon_post_analysis
 setup.cfg
 setup.py
 genomon_post_analysis/__init__.py
 genomon_post_analysis/capture.py
+genomon_post_analysis/run_bam.py
+genomon_post_analysis/run_hello.py
+genomon_post_analysis/run_igv.py
+genomon_post_analysis/run_merge.py
+genomon_post_analysis/run_overall.py
 genomon_post_analysis/tools.py
 genomon_post_analysis.egg-info/PKG-INFO
 genomon_post_analysis.egg-info/SOURCES.txt

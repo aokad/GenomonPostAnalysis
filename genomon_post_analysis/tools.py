@@ -4,8 +4,8 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: tools.py 98 2015-12-15 08:46:50Z aokada $
-$Rev: 98 $
+$Id: tools.py 125 2016-01-14 05:17:49Z aokada $
+$Rev: 125 $
 """
     
 def load_data_range(data_file, mode, config):
@@ -33,8 +33,15 @@ def load_data_range(data_file, mode, config):
         skip = 1
     
     # data read
-    data = pandas.read_csv(data_file, header = None, usecols = usecols, skiprows = skip, sep = config.get(section_in, "sept"), engine = "python")
-    
+    try:
+        data = pandas.read_csv(data_file, header = None, usecols = usecols, skiprows = skip, sep = config.get(section_in, "sept"), engine = "python")
+    except StopIteration:
+        print "skip no data file %s" % data_file
+        return [[],[]]
+    except Exception as e:
+        print "failure open data %s, %s" % (data_file, e.message)
+        return [[],[]]
+        
     if len(data) == 0:
         return [[],[]]
     
@@ -59,8 +66,15 @@ def load_data_all(data_file, ID, mode, config):
     sept = config.get(section_in, "sept")
     
     if header == False:
-        data = pandas.read_csv(data_file, header = None, sep = sept, engine = "python")
-        
+        try:
+            data = pandas.read_csv(data_file, header = None, sep = sept, engine = "python")
+        except StopIteration:
+            print "skip no data file %s" % data_file
+            return []
+        except Exception as e:
+            print "failure open data %s, %s" % (data_file, e.message)
+            return []
+            
         if config.has_option(section_in, "col_pos_chr1") == True:
             col_pos_chr1 = config.getint(section_in, "col_pos_chr1")
         else:
@@ -100,7 +114,15 @@ def load_data_all(data_file, ID, mode, config):
         data.columns = titles
             
     else:
-        data = pandas.read_csv(data_file, sep = sept, engine = "python")
+        try:
+            data = pandas.read_csv(data_file, sep = sept, engine = "python")
+        except StopIteration:
+            print "skip no data file %s" % data_file
+            return []
+        except Exception as e:
+            print "failure of open data %s, %s" % (data_file, e.message)
+            return []
+            
         titles = data.columns.get_values()
     
    # add columun "ID" 
@@ -205,4 +227,22 @@ def load_config(config_file):
     config.read(config_file)
     
     return [config, config_file]
+    
+def parse_config(config_text):
+        
+    import ConfigParser
+    config = ConfigParser.RawConfigParser()
+    
+    for item in config_text.split(" "):
+        section = ""
+        if item[0] == "[":
+            section = item[1:len(item)-1]
+            config.add_section(section)
+        else:
+            value = item.split("=")
+            config.set(section, value[0], value[1])
+    
+    return config
+    
+    
     

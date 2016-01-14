@@ -4,11 +4,11 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: capture.py 100 2015-12-15 09:09:58Z aokada $
-$Rev: 100 $
+$Id: capture.py 125 2016-01-14 05:17:49Z aokada $
+$Rev: 125 $
 """
 
-def write_capture_bat(data_file, output_file, output_dir, ID, mode, yml, task_config):
+def write_capture_bat(data_file, output_file, output_igv_dir, bam_dir, ID, mode, yml, task_config):
 
     from genomon_post_analysis import tools
     import os
@@ -35,24 +35,22 @@ snapshot {name}
     
     if len(bam_tumor) == 0:
         return False
-    
-    use_pickup_bam = task_config.getboolean("capture", "use_pickup_bam")
-    
+
     # case capture from picked bam
-    if use_pickup_bam == True:
-        pickup_bam_suffix = task_config.get("pickup", "pickup_bam_suffix")
+    if len(bam_dir) > 0:
+        pickup_bam_suffix = task_config.get("bam", "output_bam_suffix")
         bam_t_name = os.path.basename(os.path.dirname(bam_tumor))
         bam_n_name = os.path.basename(os.path.dirname(bam_normal))        
-        bam_normal_p = "%s/bam/%s/%s%s" % (output_dir, bam_t_name, bam_n_name, pickup_bam_suffix)
-        bam_tumor_p = "%s/bam/%s/%s%s" % (output_dir, bam_t_name, bam_t_name, pickup_bam_suffix)
+        bam_normal_p = "%s/%s/%s%s" % (bam_dir, bam_t_name, bam_n_name, pickup_bam_suffix)
+        bam_tumor_p = "%s/%s/%s%s" % (bam_dir, bam_t_name, bam_t_name, pickup_bam_suffix)
     else:
         bam_normal_p = bam_normal
         bam_tumor_p = bam_tumor
 
-    out_tumor_name = "%s/capture/%s" % (output_dir, ID)
+    out_tumor_name = "%s/%s" % (output_igv_dir, ID)
     
-    capt_max = task_config.getint("capture", "capture_max")
-    width = task_config.getint("capture", "capture_width")    
+    capt_max = task_config.getint("igv", "capture_max")
+    width = task_config.getint("igv", "capture_width")    
 
     capt_list = []
     capt_text = ""
@@ -96,7 +94,7 @@ snapshot {name}
     else:
         return False
   
-def write_pickup_script(data_file, output_file, output_dir, ID, mode, yml, task_config, genomon_config):
+def write_pickup_script(data_file, output_file, output_bam_dir, output_log_dir, ID, mode, yml, task_config):
 
     from genomon_post_analysis import tools
     import os
@@ -107,7 +105,6 @@ def write_pickup_script(data_file, output_file, output_dir, ID, mode, yml, task_
 #$ -cwd
 #$ -e {log}
 #$ -o {log}
-
 """
     
     cmd_bed1 = """
@@ -142,21 +139,18 @@ rm {bed}
     if len(bam_tumor) == 0:
         return False
         
-    width = task_config.getint("pickup", "pickup_width")
-    markdup_bam_suffix = task_config.get("pickup", "markdup_bam_suffix")
-    pickup_bam_suffix = task_config.get("pickup", "pickup_bam_suffix")
-    pickup_bam_suffix = os.path.splitext(pickup_bam_suffix)[0]
-    samtools = genomon_config.get("TOOLS", "samtools")
-    bedtools = genomon_config.get("TOOLS", "bedtools")
-    biobambam = genomon_config.get("TOOLS", "biobambam")
-    ref_fa = genomon_config.get("REFERENCE", "ref_fasta")
+    width = task_config.getint("bam", "pickup_width")
+    input_bam_suffix = task_config.get("bam", "input_bam_suffix")
+    output_bam_suffix = os.path.splitext(task_config.get("bam", "output_bam_suffix"))[0]
+    samtools = task_config.get("SOFTWARE", "samtools")
+    bedtools = task_config.get("SOFTWARE", "bedtools")
 
     # output file name
-    if os.path.exists(output_dir + "/bam/" + ID) == False:
-        os.mkdir(output_dir + "/bam/" + ID)
+    if os.path.exists(output_bam_dir + "/" + ID) == False:
+        os.mkdir(output_bam_dir + "/" + ID)
 
-    out_normal_name = output_dir + "/bam/" + ID + "/" + os.path.basename(bam_normal).replace(markdup_bam_suffix, "")
-    out_tumor_name = output_dir + "/bam/" + ID + "/" + os.path.basename(bam_tumor).replace(markdup_bam_suffix, "")
+    out_normal_name = output_bam_dir + "/" + ID + "/" + os.path.basename(bam_normal).replace(input_bam_suffix, "")
+    out_tumor_name = output_bam_dir + "/" + ID + "/" + os.path.basename(bam_tumor).replace(input_bam_suffix, "")
     
     # create command text
     bed1_text = cmd_bed1.format(bedtools = bedtools, bed = out_tumor_name + ".bed")
@@ -166,15 +160,11 @@ rm {bed}
     cmd_text = cmd_view.format(samtools = samtools, 
                                 bed = out_tumor_name + ".bed",
                                 bam = bam_tumor,
-                                output_bam = out_tumor_name + pickup_bam_suffix,
-                                biobambam = biobambam,
-                                ref_fa = ref_fa)
+                                output_bam = out_tumor_name + output_bam_suffix)
     cmd_text += cmd_view.format(samtools = samtools, 
                                 bed = out_tumor_name + ".bed",
                                 bam = bam_normal,
-                                output_bam = out_normal_name + pickup_bam_suffix,
-                                biobambam = biobambam,
-                                ref_fa = ref_fa)
+                                output_bam = out_normal_name + output_bam_suffix)
     cmd_text += cmd_rm_bed.format(bed = out_tumor_name + ".bed")
 
     for i in range(len(data)):
@@ -198,7 +188,7 @@ rm {bed}
     
     if len(bed2_text) > 0 :
         f_sh = open(output_file, "w")
-        f_sh.write(cmd_header.format(log = output_dir +"/log")) 
+        f_sh.write(cmd_header.format(log = output_log_dir)) 
         f_sh.write(bed1_text)
         f_sh.write(bed2_text)
         f_sh.write(bed3_text)
@@ -209,20 +199,11 @@ rm {bed}
     else:
         return False
         
-def hello(config_file):
-
-    from genomon_post_analysis import tools
-    
+def print_conf(config, conf_file):
     print "******************************"
     print "hello genomon post analysis!!!"
     print "******************************"
-    
-    [config, config_file2] = tools.load_config(config_file)
-    if config == None:
-        print "config_file is not exists:%s" % config_file2
-        return
-        
-    print "\nconfig file:%s" % config_file2
+    print "\nconfig file:%s" % conf_file
     
     for section in config.sections():
         print "[%s]" % section
