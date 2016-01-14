@@ -78,7 +78,6 @@ def call_image_capture(mode, files, output_dir, genomon_root, config):
         ID = tools.getID(f, mode, config)
         yml = genomon_root + "/sv/config/" + ID + ".yaml"
         f_capt = "%s/capture_script/%s.bat" % (output_dir, ID)
-        print "%s (%d)" % (f, os.path.getsize(f))
         if capture.write_capture_bat(f, f_capt, output_dir + "/capture", "", ID, mode, yml, config) == True:
             files_capt.append(f_capt)
     
@@ -89,7 +88,6 @@ def call_image_capture(mode, files, output_dir, genomon_root, config):
             ID = tools.getID(f, mode, config)
             yml = genomon_root + "/sv/config/" + ID + ".yaml"
             f_capt = "%s/capture_script/%s.bat" % (output_dir, ID)
-            print "%s (%d)" % (f, os.path.getsize(f))
             if capture.write_capture_bat(f, f_capt, output_dir + "/capture", "", ID, mode, yml, config) == True:
                 files_capt.append(f_capt)
             
