@@ -69,7 +69,7 @@ snapshot {name}
         if (fname in capt_list) == False:
             capt_list.append(fname)
             
-            if (long(end) - long(start)) < (width / 2):
+            if (chr1 == chr2) and ((long(end) - long(start)) < (width / 2)):
                 capt_text += cmd_capt.format(chr = chr1, start = start - width, end = start + width, name = fname + ".png")
             else:
                 start2 = start - width
