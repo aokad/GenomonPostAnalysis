@@ -4,11 +4,11 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: run_overall.py 125 2016-01-14 05:17:49Z aokada $
-$Rev: 125 $
+$Id: run_overall.py 130 2016-03-08 08:03:19Z aokada $
+$Rev: 130 $
 """
 prog = "genomon_pa run"
-version = prog + ": $Date: 2016-01-14 14:17:49 +0900 (2016/01/14 (木)) $$Rev: 125 $"
+version = prog + ": $Date: 2016-03-08 17:03:19 +0900 (2016/03/08 (火)) $$Rev: 130 $"
 
 # genomon結果ファイルリスト作成
 def find_file(mode, genomon_root, config):
@@ -54,6 +54,26 @@ def find_file(mode, genomon_root, config):
             
     return [files_1, files_2]
 
+def arg_to_file(inputs):
+    
+    if len(inputs) == 0:
+        return [[], []]
+    
+    f = inputs.lstrip("'").lstrip('"').rstrip("'").rstrip('"').split(";")
+    
+    li1 = []
+    for item in f[0].split(","):
+        li1.append(item.lstrip(" ").rstrip(" "))
+    
+    if len(f) == 1:
+        return [li1, []]
+    
+    li2 = []
+    for item in f[1].split(","):
+        li2.append(item.lstrip(" ").rstrip(" "))
+    
+    return [li1, li2]
+    
 def call_image_capture(mode, files, output_dir, genomon_root, config):
     
     print "=== [%s] create script file, for IGV image capture. ===" % mode
@@ -162,6 +182,7 @@ def main(argv):
     parser.add_argument('mode', choices=['mutation', 'sv', 'summary', 'all'], help = "analysis type")
     parser.add_argument("output_dir", help = "output file path", type = str)
     parser.add_argument("genomon_root", help = "output file path", type = str)
+    parser.add_argument("--input_file", help = "input file", type = str, default = "")
     parser.add_argument("--config_file", help = "config file", type = str, default = "")
     
     args = parser.parse_args(argv)
@@ -195,11 +216,20 @@ def main(argv):
         call_summary("summary", files, output_dir, genomon_root, config)
 
     elif args.mode == "summary":
-        files = find_file(args.mode, genomon_root, config)
+        
+        if len(args.input_file) == 0:
+            files = find_file(args.mode, genomon_root, config)
+        else:
+            files = arg_to_file(args.input_file)
+            
         call_summary(args.mode, files, output_dir, genomon_root, config)
         
     else:
-        files = find_file(args.mode, genomon_root, config)
+        if len(args.input_file) == 0:
+            files = find_file(args.mode, genomon_root, config)
+        else:
+            files = arg_to_file(args.input_file)
+            
         call_image_capture(args.mode, files, output_dir, genomon_root, config)
         call_bam_pickup(args.mode, files, output_dir, genomon_root, config)
         call_summary(args.mode, files, output_dir, genomon_root, config)

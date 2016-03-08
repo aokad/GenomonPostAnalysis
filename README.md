@@ -150,8 +150,8 @@ genomon_post_analysis.cfg
 
 <pre>
 <font color="green"># 
-# $Id: genomon_post_analysis.cfg 125 2016-01-14 05:17:49Z aokada $
-# $Rev: 125 $
+# $Id: README.md 126 2016-01-14 09:22:03Z aokada $
+# $Rev: 126 $
 # 
 
 ###########

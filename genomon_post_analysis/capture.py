@@ -4,8 +4,8 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: capture.py 125 2016-01-14 05:17:49Z aokada $
-$Rev: 125 $
+$Id: capture.py 129 2016-02-03 01:14:46Z aokada $
+$Rev: 129 $
 """
 
 def write_capture_bat(data_file, output_file, output_igv_dir, bam_dir, ID, mode, yml, task_config):

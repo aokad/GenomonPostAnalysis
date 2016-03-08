@@ -4,31 +4,22 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: genomon_pa_run 92 2015-12-14 08:06:48Z aokada $
-$Rev: 92 $
+$Id: genomon_pa 131 2016-03-08 08:14:32Z aokada $
+$Rev: 131 $
 """
 
 def main():
-    from genomon_post_analysis import run_igv
-    from genomon_post_analysis import run_bam
-    from genomon_post_analysis import run_merge
     from genomon_post_analysis import run_overall
     from genomon_post_analysis import run_conf
     import sys
 
-    message = "$ genomon_post_analysis\nusage: genomon_pa {run, igv, bam, merge, conf} OPTIONS"
+    message = "$ genomon_post_analysis\nusage: genomon_pa {run, conf} OPTIONS"
 
     if len(sys.argv) < 2:
         print (message)
     else:
         mode = sys.argv[1]
-        if mode == "igv":
-            run_igv.main(sys.argv[2:len(sys.argv)])
-        elif mode == "bam":
-            run_bam.main(sys.argv[2:len(sys.argv)])
-        elif mode == "merge":
-            run_merge.main(sys.argv[2:len(sys.argv)])
-        elif mode == "run":
+        if mode == "run":
             run_overall.main(sys.argv[2:len(sys.argv)])
         elif mode == "conf":
             run_conf.main(sys.argv[2:len(sys.argv)])
