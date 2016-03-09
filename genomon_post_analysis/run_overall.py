@@ -157,9 +157,9 @@ def call_bam_pickup(mode, files, output_dir, genomon_root, config):
             
     capture.merge_pickup_script(files_pick, output_script_dir + "/pickup.sh")
     
-def call_summary(mode, files, output_dir, genomon_root, config):
+def call_merge(mode, files, output_dir, genomon_root, config):
     
-    print "=== [%s] merge summary file. ===" % mode
+    print "=== [%s] merge result file. ===" % mode
     
     from genomon_post_analysis import capture
         
@@ -170,7 +170,16 @@ def call_summary(mode, files, output_dir, genomon_root, config):
       and (config.getboolean("input", mode + "_merge") == True)):
           
         capture.merge_result(files[1], output_dir + "/merge." + mode + ".normal.csv", mode, config)
+
+def call_summary(mode, files, output_dir, genomon_root, config):
     
+    print "=== [%s] merge summary file. ===" % mode
+    
+    from genomon_post_analysis import capture
+        
+    # result files
+    capture.merge_result(files[0], output_dir + "/merge." + mode + ".csv", mode, config)
+
 def main(argv):
     from genomon_post_analysis import tools
     import os
@@ -205,12 +214,12 @@ def main(argv):
         files = find_file("sv", genomon_root, config)
         call_image_capture("sv", files, output_dir, genomon_root, config)
         call_bam_pickup("sv", files, output_dir, genomon_root, config)
-        call_summary("sv", files, output_dir, genomon_root, config)
+        call_merge("sv", files, output_dir, genomon_root, config)
 
         files = find_file("mutation", genomon_root, config)
         call_image_capture("mutation", files, output_dir, genomon_root, config)
         call_bam_pickup("mutation", files, output_dir, genomon_root, config)
-        call_summary("mutation", files, output_dir, genomon_root, config)
+        call_merge("mutation", files, output_dir, genomon_root, config)
         
         files = find_file("summary", genomon_root, config)
         call_summary("summary", files, output_dir, genomon_root, config)
@@ -232,5 +241,5 @@ def main(argv):
             
         call_image_capture(args.mode, files, output_dir, genomon_root, config)
         call_bam_pickup(args.mode, files, output_dir, genomon_root, config)
-        call_summary(args.mode, files, output_dir, genomon_root, config)
+        call_merge(args.mode, files, output_dir, genomon_root, config)
 
