@@ -6,7 +6,7 @@ $Rev: 123 $
 
 from setuptools import setup, find_packages
 
-version = '1.1'
+version = '1.0.1'
 
 setup(name='genomon_post_analysis',
       version=version,
