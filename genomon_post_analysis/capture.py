@@ -4,22 +4,115 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: capture.py 129 2016-02-03 01:14:46Z aokada $
-$Rev: 129 $
+$Id: capture.py 140 2016-04-13 07:25:15Z aokada $
+$Rev: 140 $
 """
 
-def write_capture_bat(data_file, output_file, output_igv_dir, bam_dir, ID, mode, yml, task_config):
-
-    from genomon_post_analysis import tools
+def load_sample_conf(f):
+    import sample_conf
     import os
     
+    if os.path.exists(f) == False:
+        print ("sample_sheet is none: %s" % (f))
+        return None
+    
+    sample = sample_conf.sample_conf
+    try:
+        sample.parse_file(f)
+    except Exception as e:
+        print ("failure sample_conf: %s, %s" % (f, e.message))
+        return None
+    
+    return sample
+    
+def sample_to_pair(sample, mode, tumor):
+    
+    if mode == "mutation":
+        li = sample.mutation_call
+    elif mode == "sv":
+        li = sample.sv_detection
+    else:
+        return {}
+        
+    for pair in li:
+        if (tumor in pair) == True:
+            return pair[1]
+                
+    return None
+    
+def sample_to_result_file(sample_name, mode, genomon_root, suffix):
+    return genomon_root + "/" + mode + "/" + sample_name + "/" + sample_name + suffix
+
+def sample_to_bam_file(sample_name, mode, genomon_root, suffix):
+    return genomon_root + "/bam/" + sample_name + "/" + sample_name + suffix
+
+# for stand alone    
+def sample_to_list(sample, mode, genomon_root, config):
+
+    import genomon_post_analysis.subcode.tools as tools
+    
+    if mode == "qc":
+        items = []
+        for item in sample.qc:
+            items.append(item)
+
+        return {"all": items}
+    
+    if mode == "mutation":
+        li = sample.mutation_call
+    elif mode == "sv":
+        li = sample.sv_detection
+    else:
+        return {}
+        
+    tmr_nrml_list = []
+    tmr_nrml_none = []
+    tmr_none_list = []
+    tmr_none_none = []
+
+    [section_in, section_out] = tools.get_section(mode)
+    unpair = tools.config_getboolean(config, section_out, "include_unpair")
+    unpanel = tools.config_getboolean(config, section_out, "include_unpanel")
+    
+    for item in li:
+        if item[1]== None:
+            if unpair == True:
+                if item[2] == None:
+                    if unpanel == True: tmr_none_none.append(item[0])
+                else:
+                    tmr_none_list.append(item[0])
+        else:
+            if item[2] == None:
+                if unpanel == True: tmr_nrml_none.append(item[0])
+            else:
+                tmr_nrml_list.append(item[0])
+    
+    all_dict = {}
+    if tools.config_getboolean(config, section_out, "all_in_one") == True:
+        al = []
+        al.extend(tmr_nrml_list)
+        al.extend(tmr_nrml_none)
+        al.extend(tmr_none_list)
+        al.extend(tmr_none_none)
+        all_dict = {"all": al}
+    
+    sep_dict = {}
+    if tools.config_getboolean(config, section_out, "separate") == True:
+        sep_dict = {"case1": tmr_nrml_list, "case2": tmr_nrml_none, "case3": tmr_none_list, "case4": tmr_none_none}
+    
+    return(all_dict, sep_dict)
+    
+def write_capture_bat(path_options, ID, sample_conf, mode, config):
+
     cmd_header = """
 genome hg19
 
 """
-    cmd_new = """
+    cmd_new_tumor = """
 new
 load {tumor_bam}
+"""
+    cmd_new_normal = """
 load {normal_bam}
 """
     cmd_capt = """
@@ -27,43 +120,68 @@ goto {chr}:{start}-{end}
 snapshot {name}
 """
 
-    [data, colsname] = tools.load_data_range(data_file, mode, task_config)
-    if len(data) == 0:
-        return False
-        
-    [bam_tumor, bam_normal] = tools.load_yaml(yml)
+    import genomon_post_analysis.subcode.tools as tools
+    import genomon_post_analysis.subcode.merge as merge
+    import genomon_post_analysis.subcode.data_frame as data_frame
+
+    [section_in, section_out] = tools.get_section(mode)
+    suffix_f = tools.config_getstr(config, section_in, "suffix_filt")
+    data_file = sample_to_result_file(ID, mode, path_options["genomon_root"], suffix_f)
     
-    if len(bam_tumor) == 0:
+    # options read
+    colpos = merge.load_potisions(mode, config)
+    data_options = {"sept": tools.config_getstr(config, section_in, "sept"),
+                    "header": tools.config_getboolean(config, section_in, "header"), 
+                    "comment": tools.config_getstr(config, section_in, "comment")}
+    [usecols, colsname] = merge.header_info(data_file, colpos, mode, data_options)
+
+    try:
+        if len(usecols) > 0:
+            # data read
+            df = data_frame.load_file(data_file, 
+                        sept = tools.config_getstr(config, section_in, "sept"), 
+                        header = tools.config_getboolean(config, section_in, "header"), 
+                        usecol = usecols)
+            df.title = colsname
+            
+            col_chr1 = df.name_to_index("chr1")
+            col_chr2 = df.name_to_index("chr2")
+            col_start = df.name_to_index("start")
+            col_end = df.name_to_index("end")
+        else:
+            print ("column position is invalid. check your config file.")
+            return False
+
+    except IndexError as e:
+        print ("column position is invalid. check your config file.")
+        return False
+    except Exception as e:
+        print ("failure open file %s, %s" % (data_file, e.message))
         return False
 
-    # case capture from picked bam
-    if len(bam_dir) > 0:
-        pickup_bam_suffix = task_config.get("bam", "output_bam_suffix")
-        bam_t_name = os.path.basename(os.path.dirname(bam_tumor))
-        bam_n_name = os.path.basename(os.path.dirname(bam_normal))        
-        bam_normal_p = "%s/%s/%s%s" % (bam_dir, bam_t_name, bam_n_name, pickup_bam_suffix)
-        bam_tumor_p = "%s/%s/%s%s" % (bam_dir, bam_t_name, bam_t_name, pickup_bam_suffix)
-    else:
-        bam_normal_p = bam_normal
-        bam_tumor_p = bam_tumor
+    bam_tumor = sample_to_bam_file(ID, mode, path_options["genomon_root"], tools.config_getstr(config, "bam", "input_bam_suffix"))
+    normal = sample_to_pair(sample_conf, mode, ID)
+    bam_normal = ""
+    if normal != None:
+        bam_normal = sample_to_bam_file(normal, mode, path_options["genomon_root"], tools.config_getstr(config, "bam", "input_bam_suffix"))
 
-    out_tumor_name = "%s/%s" % (output_igv_dir, ID)
+    out_tumor_name = "%s/%s" % (path_options["output_igv_dir"], ID)
     
-    capt_max = task_config.getint("igv", "capture_max")
-    width = task_config.getint("igv", "capture_width")    
+    capt_max = config.getint("igv", "capture_max")
+    width = config.getint("igv", "capture_width")    
 
     capt_list = []
     capt_text = ""
     
-    for i in range(len(data)):
+    for i in range(len(df.data)):
         
         if len(capt_list) >= capt_max:
             continue
 
-        chr1 = data[colsname[0]][i]
-        start = data[colsname[1]][i]
-        chr2 = data[colsname[2]][i]
-        end = data[colsname[3]][i]
+        chr1 = df.data[i][col_chr1]
+        start = int(df.data[i][col_start])
+        chr2 = df.data[i][col_chr2]
+        end = int(df.data[i][col_end])
         
         fname = "{0}_{1}_{2}_{3}_{4}".format(out_tumor_name, chr1, start, chr2, end)
         if (fname in capt_list) == False:
@@ -83,10 +201,12 @@ snapshot {name}
     
     if len(capt_text) > 0:
         cmd = cmd_header
-        cmd += cmd_new.format(tumor_bam = bam_tumor_p, normal_bam = bam_normal_p)   
+        cmd += cmd_new_tumor.format(tumor_bam = bam_tumor)
+        if len(bam_normal) > 0:
+            cmd += cmd_new_normal.format(normal_bam = bam_normal) 
         cmd += capt_text
         
-        f = open(output_file, "w")
+        f = open(path_options["output_file"], "w")
         f.write(cmd)   
         f.close()
     
@@ -94,11 +214,8 @@ snapshot {name}
     else:
         return False
   
-def write_pickup_script(data_file, output_file, output_bam_dir, output_log_dir, ID, mode, yml, task_config):
+def write_pickup_script(path_options, ID, sample_conf, mode, config):
 
-    from genomon_post_analysis import tools
-    import os
-    
     cmd_header = """#!/bin/bash
 #
 #$ -S /bin/bash
@@ -130,27 +247,68 @@ rm {output_bam}.temp.bam
     cmd_rm_bed = """
 rm {bed}
 """
-    [data, colsname] = tools.load_data_range(data_file, mode, task_config)
-    if len(data) == 0:
-        return False
-        
-    [bam_tumor, bam_normal] = tools.load_yaml(yml)
+
+    import genomon_post_analysis.subcode.tools as tools
+    import genomon_post_analysis.subcode.merge as merge
+    import genomon_post_analysis.subcode.data_frame as data_frame
     
-    if len(bam_tumor) == 0:
+    import os
+    
+    # options read
+    [section_in, section_out] = tools.get_section(mode)
+    suffix_f = tools.config_getstr(config, section_in, "suffix_filt")
+    data_file = sample_to_result_file(ID, mode, path_options["genomon_root"], suffix_f)
+    
+    # options read
+    colpos = merge.load_potisions(mode, config)
+    data_options = {"sept": tools.config_getstr(config, section_in, "sept"),
+                    "header": tools.config_getboolean(config, section_in, "header"), 
+                    "comment": tools.config_getstr(config, section_in, "comment")}
+    [usecols, colsname] = merge.header_info(data_file, colpos, mode, data_options)
+    
+    # data read
+    try:
+        if len(usecols) > 0:
+            df = data_frame.load_file(data_file, 
+                        sept = tools.config_getstr(config, section_in, "sept"), 
+                        header = tools.config_getboolean(config, section_in, "header"), 
+                        usecol = usecols)
+            df.title = colsname
+            
+            col_chr1 = df.name_to_index("chr1")
+            col_chr2 = df.name_to_index("chr2")
+            col_start = df.name_to_index("start")
+            col_end = df.name_to_index("end")
+        else:
+            print ("column position is invalid. check your config file.")
+            return False
+    
+    except IndexError as e:
+        print ("column position is invalid. check your config file.")
         return False
-        
-    width = task_config.getint("bam", "pickup_width")
-    input_bam_suffix = task_config.get("bam", "input_bam_suffix")
-    output_bam_suffix = os.path.splitext(task_config.get("bam", "output_bam_suffix"))[0]
-    samtools = task_config.get("SOFTWARE", "samtools")
-    bedtools = task_config.get("SOFTWARE", "bedtools")
+    except Exception as e:
+        print ("failure open file %s, %s" % (data_file, e.message))
+        return False
 
     # output file name
-    if os.path.exists(output_bam_dir + "/" + ID) == False:
-        os.mkdir(output_bam_dir + "/" + ID)
+    if os.path.exists(path_options["output_bam_dir"] + "/" + ID) == False:
+        os.mkdir(path_options["output_bam_dir"] + "/" + ID)
 
-    out_normal_name = output_bam_dir + "/" + ID + "/" + os.path.basename(bam_normal).replace(input_bam_suffix, "")
-    out_tumor_name = output_bam_dir + "/" + ID + "/" + os.path.basename(bam_tumor).replace(input_bam_suffix, "")
+    bam_tumor = sample_to_bam_file(ID, mode, path_options["genomon_root"], tools.config_getstr(config, "bam", "input_bam_suffix"))
+    out_tumor_name = path_options["output_bam_dir"] + "/" + ID + "/" + ID
+    
+    normal = sample_to_pair(sample_conf, mode, ID)
+    bam_normal = ""
+    out_normal_name = ""
+    if normal != None:
+        bam_normal = sample_to_bam_file(normal, mode, path_options["genomon_root"], tools.config_getstr(config, "bam", "input_bam_suffix"))
+        out_normal_name = path_options["output_bam_dir"] + "/" + ID + "/" + normal
+        
+    # read config
+    width = config.getint("bam", "pickup_width")
+    output_bam_suffix = os.path.splitext(config.get("bam", "output_bam_suffix"))[0]
+    samtools = path_options["samtools"]
+    bedtools = path_options["bedtools"]
     
     # create command text
     bed1_text = cmd_bed1.format(bedtools = bedtools, bed = out_tumor_name + ".bed")
@@ -161,34 +319,35 @@ rm {bed}
                                 bed = out_tumor_name + ".bed",
                                 bam = bam_tumor,
                                 output_bam = out_tumor_name + output_bam_suffix)
-    cmd_text += cmd_view.format(samtools = samtools, 
+    if bam_normal != "":
+        cmd_text += cmd_view.format(samtools = samtools, 
                                 bed = out_tumor_name + ".bed",
                                 bam = bam_normal,
                                 output_bam = out_normal_name + output_bam_suffix)
     cmd_text += cmd_rm_bed.format(bed = out_tumor_name + ".bed")
 
-    for i in range(len(data)):
+    for i in range(len(df.data)):
 
-        start = data[colsname[1]][i] - width
+        start = df.data[i][col_start] - width
         if start < 0:
             start = 0
-        bed2_text += cmd_bed2.format(chr = data[colsname[0]][i], 
+        bed2_text += cmd_bed2.format(chr = df.data[i][col_chr1], 
                            start = start,
-                           end = data[colsname[1]][i] + width,
+                           end = df.data[i][col_start] + width,
                            bed = out_tumor_name + ".bed"
                            )
-        start = data[colsname[3]][i] - width
+        start = df.data[i][col_end] - width
         if start < 0:
             start = 0
-        bed2_text += cmd_bed2.format(chr = data[colsname[2]][i], 
+        bed2_text += cmd_bed2.format(chr = df.data[i][col_chr2], 
                            start = start,
-                           end = data[colsname[3]][i] + width,
+                           end = df.data[i][col_end] + width,
                            bed = out_tumor_name + ".bed"
                            )
     
     if len(bed2_text) > 0 :
-        f_sh = open(output_file, "w")
-        f_sh.write(cmd_header.format(log = output_log_dir)) 
+        f_sh = open(path_options["output_file"], "w")
+        f_sh.write(cmd_header.format(log = path_options["output_log_dir"])) 
         f_sh.write(bed1_text)
         f_sh.write(bed2_text)
         f_sh.write(bed3_text)
@@ -199,22 +358,11 @@ rm {bed}
     else:
         return False
         
-def print_conf(config, conf_file):
-    print "******************************"
-    print "hello genomon post analysis!!!"
-    print "******************************"
-    print "\nconfig file:%s" % conf_file
-    
-    for section in config.sections():
-        print "[%s]" % section
-        for item in config.items(section):
-            print item
-
 def merge_capture_bat(files, output_file, delete_flg):
 
     import os
     
-    write_text = ""
+    write_lines = []
     
     for bat_file in files:
         if os.path.exists(bat_file) == False:
@@ -222,60 +370,35 @@ def merge_capture_bat(files, output_file, delete_flg):
             continue
         
         f = open(bat_file)
-        data = f.read()
+        write_lines.append(f.read()) 
         f.close()
-        
-        write_text += data
-        
-        if delete_flg == True:
-            os.remove(bat_file)
     
     f = open(output_file, "w")
-    f.write(write_text)
+    f.writelines(write_lines)
     f.close()
 
+    if delete_flg == True:
+        for bat_file in files:
+            os.remove(bat_file)
+            
 def merge_pickup_script(files, output_file):
 
     import os
     
-    write_text = """#!/bin/bash
+    header = """#!/bin/bash
 #
 """
-
+    write_lines = [header]
+    
     for bat_file in files:
         if os.path.exists(bat_file) == False:
             print "[WARNING] file is not exist. %s" % bat_file
             continue
         
-        write_text += "qsub %s\nsleep 1s\n" % bat_file
+        write_lines.append("qsub %s\nsleep 1s\n" % bat_file)
     
     f = open(output_file, "w")
-    f.write(write_text)
+    f.writelines(write_lines)
     f.close()
     
     os.chmod(output_file, 0744)
-
-def merge_result(files, output_file, mode, task_config):
-
-    from genomon_post_analysis import tools
-    import os
-    
-    first = True
-    
-    for result_file in files:
-        if os.path.exists(result_file) == False:
-            print "[WARNING] file is not exist. %s" % result_file
-            continue
-
-        ID = tools.getID(result_file, mode, task_config) 
-        data = tools.load_data_all(result_file, ID, mode, task_config)
-
-        if len(data) == 0:
-            continue
-
-        if first == True:
-            data.to_csv(output_file, index = False, header = True, mode = "w")
-            first = False
-        else:
-            data.to_csv(output_file, index = False, header = False, mode = "a")
-

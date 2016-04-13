@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-$Id: setup.py 123 2016-01-13 09:55:58Z aokada $
-$Rev: 123 $
+$Id: setup.py 135 2016-04-04 09:16:57Z aokada $
+$Rev: 135 $
 """
 
 from setuptools import setup, find_packages
 
-version = '1.0.1'
+version = '1.0.2'
 
 setup(name='genomon_post_analysis',
       version=version,

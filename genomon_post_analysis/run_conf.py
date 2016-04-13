@@ -4,33 +4,22 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: run_conf.py 125 2016-01-14 05:17:49Z aokada $
-$Rev: 125 $
+$Id: run_conf.py 138 2016-04-11 01:10:23Z aokada $
 """
 prog = "genomon_pa conf"
-version = prog + ": $Date: 2016-01-14 14:17:49 +0900 (2016/01/14 (木)) $$Rev: 125 $"
 
 def main(argv):
-    from genomon_post_analysis import tools
-    from genomon_post_analysis import capture
+    import genomon_post_analysis.subcode.tools as tools
     import argparse
     
     parser = argparse.ArgumentParser(prog = prog)
     
-    parser.add_argument("--version", action = "version", version = version)
+    parser.add_argument("--version", action = "version", version = tools.version_text())
     parser.add_argument("--config_file", help = "config file", type = str, default = "")
-    parser.add_argument("--config_text", help = "config text", type = str, default = "")
 
     args = parser.parse_args(argv)
     
     # config
-    if len(args.config_file) > 0:
-        [config, conf_file] = tools.load_config(args.config_file)
-    elif len(args.config_text) > 0:
-        config = tools.parse_config(args.config_text)
-        conf_file = ""
-    else:
-        [config, conf_file] = tools.load_config("")
+    [config, conf_file] = tools.load_config(args.config_file)
     
-    capture.print_conf(config, conf_file)
-    
+    tools.print_conf(config, conf_file, "Genomon Post Analysis")

@@ -4,84 +4,67 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: run_overall.py 130 2016-03-08 08:03:19Z aokada $
-$Rev: 130 $
+$Id: run_overall.py 140 2016-04-13 07:25:15Z aokada $
 """
 prog = "genomon_pa run"
-version = prog + ": $Date: 2016-03-08 17:03:19 +0900 (2016/03/08 (火)) $$Rev: 130 $"
 
-# genomon結果ファイルリスト作成
-def find_file(mode, genomon_root, config):
+import genomon_post_analysis.subcode.tools as tools
+import capture
+
+# for Genomon-call
+def arg_to_file(mode, genomon_root, args, config):
+    def text_to_list(inputs, flg):
+        
+        if flg == False:
+            return []
+            
+        if len(inputs) == 0:
+            return []
+        
+        "--input_file 'sample1_t,sample2_t;sample1_n,sample2_n'"
     
-    from genomon_post_analysis import tools
-    import glob
-    import os
-    
-    # result files
+        f = inputs.lstrip("'").lstrip('"').rstrip("'").rstrip('"').split(";")
+        
+        li = []
+        for item in f[0].split(","):
+            li.append(item.lstrip(" ").rstrip(" "))
+        
+        return li
+            
     [section_in, section_out] = tools.get_section(mode)
-    input_file_pattern = "%s/%s/*/*%s" % (genomon_root, mode, config.get(section_in, "suffix"))
     
-    files_1 = []
-    files_2 = []
-    for f in glob.glob(input_file_pattern):
-        ID = tools.getID(f, mode, config)
-        
-        # dir構成が "genomon_root/{mode}/ID/ID.suffix" かどうか
-        if os.path.basename(os.path.dirname(f)) != ID:
-            continue
-        
-        # 空ファイルかどうか
-        if os.path.getsize(f) == 0:
-            print "[%s] skip blank file %s" % (mode, f)
-            continue
-        
-        # normalだけの結果を分ける
-        yml = genomon_root + "/sv/config/" + ID + ".yaml"
-        if os.path.exists(yml) == False:
-            if mode == "summary":
-                files_1.append(f)
-                continue
-            else:
-                "[%s] skip file %s, with no config file %s" % (mode, f, yml)
-                continue
-            
-        [bam_tumor, bam_normal] = tools.load_yaml(yml)
-            
-        if len(bam_tumor) > 0 and len(bam_normal) > 0:
-            files_1.append(f)
-        else:
-            files_2.append(f)
-            
-    return [files_1, files_2]
-
-def arg_to_file(inputs):
+    all_dict = {}
+    if tools.config_getboolean(config, section_out, "all_in_one") == True:
+        al = []
+        al.extend(text_to_list(args.input_file_case1, True))
+        al.extend(text_to_list(args.input_file_case2, tools.config_getboolean(config, section_out, "include_unpanel")))
+        al.extend(text_to_list(args.input_file_case3, tools.config_getboolean(config, section_out, "include_unpair")))
+        al.extend(text_to_list(args.input_file_case4, 
+                  tools.config_getboolean(config, section_out, "include_unpair") and tools.config_getboolean(config, section_out, "include_unpanel")))
+        all_dict = {"all": al}
     
-    if len(inputs) == 0:
-        return [[], []]
+    sep_dict = {}
+    if tools.config_getboolean(config, section_out, "all_in_one") == True:
+        sep_dict["case1"] = text_to_list(args.input_file_case1, True)
+        sep_dict["case2"] = text_to_list(args.input_file_case2, tools.config_getboolean(config, section_out, "include_unpanel"))
+        sep_dict["case3"] = text_to_list(args.input_file_case3, tools.config_getboolean(config, section_out, "include_unpair"))
+        sep_dict["case4"] = text_to_list(args.input_file_case4, 
+                  tools.config_getboolean(config, section_out, "include_unpair") and tools.config_getboolean(config, section_out, "include_unpanel"))
     
-    f = inputs.lstrip("'").lstrip('"').rstrip("'").rstrip('"').split(";")
+    return(all_dict, sep_dict)
     
-    li1 = []
-    for item in f[0].split(","):
-        li1.append(item.lstrip(" ").rstrip(" "))
-    
-    if len(f) == 1:
-        return [li1, []]
-    
-    li2 = []
-    for item in f[1].split(","):
-        li2.append(item.lstrip(" ").rstrip(" "))
-    
-    return [li1, li2]
-    
-def call_image_capture(mode, files, output_dir, genomon_root, config):
+def call_image_capture(mode, ids_tuple, output_dir, genomon_root, sample_conf, config):
     
     print "=== [%s] create script file, for IGV image capture. ===" % mode
-    
-    from genomon_post_analysis import tools
-    from genomon_post_analysis import capture
     import os
     
+    ids = {}
+    for dic in ids_tuple:
+        for key in dic:
+            if len(dic[key]) > 0:
+                ids = dic
+                break
+        
     # output dirs
     output_dir = os.path.abspath(output_dir) + "/" + mode
     
@@ -91,36 +74,37 @@ def call_image_capture(mode, files, output_dir, genomon_root, config):
         os.mkdir(output_dir + "/capture")
     if (os.path.exists(output_dir + "/capture_script") == False):
         os.mkdir(output_dir + "/capture_script")
-        
-    # result files
-    files_capt = []
-    for f in files[0]:
-        ID = tools.getID(f, mode, config)
-        yml = genomon_root + "/sv/config/" + ID + ".yaml"
-        f_capt = "%s/capture_script/%s.bat" % (output_dir, ID)
-        if capture.write_capture_bat(f, f_capt, output_dir + "/capture", "", ID, mode, yml, config) == True:
-            files_capt.append(f_capt)
     
-    if ((config.getboolean("input", "include_normal") == True) 
-      and (config.getboolean("input", mode + "_igv") == True)):
-          
-        for f in files[1]:
-            ID = tools.getID(f, mode, config)
-            yml = genomon_root + "/sv/config/" + ID + ".yaml"
+    files_capt = []
+    for key in ids:
+        for ID in ids[key]:
+
             f_capt = "%s/capture_script/%s.bat" % (output_dir, ID)
-            if capture.write_capture_bat(f, f_capt, output_dir + "/capture", "", ID, mode, yml, config) == True:
-                files_capt.append(f_capt)
             
+            path_options = { 
+                "output_file": f_capt,
+                "output_igv_dir": output_dir + "/capture",
+                "bam_dir": "",
+                "genomon_root": genomon_root
+               }            
+
+            if capture.write_capture_bat(path_options, ID, sample_conf, mode, config) == True:
+                files_capt.append(f_capt)
+
     capture.merge_capture_bat(files_capt, output_dir + "/capture_script/capture.bat", True)
 
-def call_bam_pickup(mode, files, output_dir, genomon_root, config):
+def call_bam_pickup(mode, ids_tuple, output_dir, genomon_root, arg_samtools, arg_bedtools, sample_conf, config):
     
     print "=== [%s] create script file, for bam pick up. ===" % mode
-    
-    from genomon_post_analysis import tools
-    from genomon_post_analysis import capture
     import os
     
+    ids = {}
+    for dic in ids_tuple:
+        for key in dic:
+            if len(dic[key]) > 0:
+                ids = dic
+                break
+            
     # output dirs
     output_dir = os.path.abspath(output_dir) + "/" + mode
     output_bam_dir = output_dir + "/bam"
@@ -135,64 +119,87 @@ def call_bam_pickup(mode, files, output_dir, genomon_root, config):
         os.mkdir(output_log_dir)
     if (os.path.exists(output_script_dir) == False):
         os.mkdir(output_script_dir)
-        
-    # result files    
-    files_pick = []
-    for f in files[0]:
-        ID = tools.getID(f, mode, config)
-        yml = genomon_root + "/sv/config/" + ID + ".yaml"
-        f_pick = "%s/pickup.%s.sh" % (output_script_dir, ID)
-        if capture.write_pickup_script(f, f_pick, output_bam_dir, output_log_dir, ID, mode, yml, config) == True:
-            files_pick.append(f_pick)
     
-    if ((config.getboolean("input", "include_normal") == True) 
-      and (config.getboolean("input", mode + "_bam") == True)):
-          
-        for f in files[1]:
-            ID = tools.getID(f, mode, config)
-            yml = genomon_root + "/sv/config/" + ID + ".yaml"
+    # tools
+    samtools = arg_samtools
+    if samtools == "":
+        samtools = tools.config_getstr(config, "tools", "samtools")
+        
+    bedtools = arg_bedtools
+    if bedtools == "":
+        bedtools = tools.config_getstr(config, "tools", "bedtools")
+        
+    files_pick = []
+    for key in ids:
+        for ID in ids[key]:
             f_pick = "%s/pickup.%s.sh" % (output_script_dir, ID)
-            if capture.write_pickup_script(f, f_pick, output_bam_dir, output_log_dir, ID, mode, yml, config) == True:
+            
+            path_options = {
+               "output_file": f_pick,
+               "output_bam_dir": output_bam_dir,
+               "output_log_dir": output_log_dir,
+               "genomon_root": genomon_root,
+               "samtools":samtools,
+               "bedtools":bedtools
+               }
+               
+            if capture.write_pickup_script(path_options, ID, sample_conf, mode, config) == True:
                 files_pick.append(f_pick)
             
     capture.merge_pickup_script(files_pick, output_script_dir + "/pickup.sh")
     
-def call_merge(mode, files, output_dir, genomon_root, config):
+def call_merge_result(mode, ids, output_dir, genomon_root, config):
     
     print "=== [%s] merge result file. ===" % mode
+    import genomon_post_analysis.subcode.merge as merge
     
-    from genomon_post_analysis import capture
-        
-    # result files
-    capture.merge_result(files[0], output_dir + "/merge." + mode + ".tumor.csv", mode, config)
+    [section_in, section_out] = tools.get_section(mode)
+    suffix_u = tools.config_getstr(config, section_in, "suffix")
+    suffix_f = tools.config_getstr(config, section_in, "suffix_filt")
     
-    if ((config.getboolean("input", "include_normal") == True) 
-      and (config.getboolean("input", mode + "_merge") == True)):
-          
-        capture.merge_result(files[1], output_dir + "/merge." + mode + ".normal.csv", mode, config)
+    merge_unfilt = tools.config_getboolean(config, section_out, "include_unfilt")
+    
+    for key in ids:
+        # unfilterd
+        output_name = tools.config_getstr(config, section_out, "output_" + key)
+        if output_name != "":
+            if merge_unfilt == True:
+                files = []
+                for iid in ids[key]:
+                    files.append(capture.sample_to_result_file(iid, mode, genomon_root, suffix_u))
 
-def call_summary(mode, files, output_dir, genomon_root, config):
+                merge.merge_result(files, ids[key], output_dir + "/" + output_name, mode, config)
     
-    print "=== [%s] merge summary file. ===" % mode
+        # filterd
+        output_name = tools.config_getstr(config, section_out, "output_filt_" + key)
+        if output_name != "":
+            files = []
+            for iid in ids[key]:
+                files.append(capture.sample_to_result_file(iid, mode, genomon_root, suffix_f))
+            
+            merge.merge_result(files, ids[key], output_dir + "/" + output_name, mode, config)
     
-    from genomon_post_analysis import capture
-        
-    # result files
-    capture.merge_result(files[0], output_dir + "/merge." + mode + ".csv", mode, config)
-
 def main(argv):
-    from genomon_post_analysis import tools
+
     import os
     import argparse
     
     parser = argparse.ArgumentParser(prog = prog)
 
-    parser.add_argument("--version", action = "version", version = version)
-    parser.add_argument('mode', choices=['mutation', 'sv', 'summary', 'all'], help = "analysis type")
+    parser.add_argument("--version", action = "version", version = tools.version_text())
+    parser.add_argument('mode', choices=['mutation', 'sv', 'qc', 'all'], help = "analysis type")
     parser.add_argument("output_dir", help = "output file path", type = str)
-    parser.add_argument("genomon_root", help = "output file path", type = str)
-    parser.add_argument("--input_file", help = "input file", type = str, default = "")
+    parser.add_argument("genomon_root", help = "Genomon root path", type = str)
+    parser.add_argument("sample_sheet", help = "sample file of Genomon", type = str)
     parser.add_argument("--config_file", help = "config file", type = str, default = "")
+    
+    # for genomon-call
+    parser.add_argument("--input_file_case1", help = "input file", type = str, default = "")
+    parser.add_argument("--input_file_case2", help = "input file", type = str, default = "")
+    parser.add_argument("--input_file_case3", help = "input file", type = str, default = "")
+    parser.add_argument("--input_file_case4", help = "input file", type = str, default = "")
+    parser.add_argument("--samtools", help = "samtool's path", type = str, default = "")
+    parser.add_argument("--bedtools", help = "bedtool's path", type = str, default = "")
     
     args = parser.parse_args(argv)
     
@@ -204,42 +211,50 @@ def main(argv):
     genomon_root = os.path.abspath(args.genomon_root)
     
     # config
-    if len(args.config_file) > 0:
-        [config, conf_file] = tools.load_config(args.config_file)
-    else:
-        [config, conf_file] = tools.load_config("")
+    [config, conf_file] = tools.load_config(args.config_file)
     
+    sample_conf = capture.load_sample_conf(args.sample_sheet)
+    if sample_conf == None:
+        return
+        
     # call functions
     if args.mode == "all":
-        files = find_file("sv", genomon_root, config)
-        call_image_capture("sv", files, output_dir, genomon_root, config)
-        call_bam_pickup("sv", files, output_dir, genomon_root, config)
-        call_merge("sv", files, output_dir, genomon_root, config)
+        (all_ids, sep_ids) = capture.sample_to_list(sample_conf, "sv", genomon_root, config)
+        if tools.config_getboolean(config, "igv", "enable") == True:
+            call_image_capture("sv", (all_ids, sep_ids), output_dir, genomon_root, sample_conf, config)
+        if tools.config_getboolean(config, "bam", "enable") == True:
+            call_bam_pickup("sv", (all_ids, sep_ids), output_dir, genomon_root, args.samtools, args.bedtools, sample_conf, config)
+        call_merge_result("sv", all_ids, output_dir, genomon_root, config)
+        call_merge_result("sv", sep_ids, output_dir, genomon_root, config)
+        
+        (all_ids, sep_ids) = capture.sample_to_list(sample_conf, "mutation", genomon_root, config)
+        if tools.config_getboolean(config, "igv", "enable") == True:
+            call_image_capture("mutation", all_ids, output_dir, genomon_root, sample_conf, config)
+        if tools.config_getboolean(config, "bam", "enable") == True:
+            call_bam_pickup("mutation", all_ids, output_dir, genomon_root, args.samtools, args.bedtools, sample_conf, config)
+        call_merge_result("mutation", all_ids, output_dir, genomon_root, config)
+        call_merge_result("mutation", sep_ids, output_dir, genomon_root, config)
+        
+        (all_ids, sep_ids) = capture.sample_to_list(sample_conf, "qc", genomon_root, config)
+        call_merge_result("qc", all_ids, output_dir, genomon_root,  config)
+        call_merge_result("qc", sep_ids, output_dir, genomon_root,  config)
 
-        files = find_file("mutation", genomon_root, config)
-        call_image_capture("mutation", files, output_dir, genomon_root, config)
-        call_bam_pickup("mutation", files, output_dir, genomon_root, config)
-        call_merge("mutation", files, output_dir, genomon_root, config)
-        
-        files = find_file("summary", genomon_root, config)
-        call_summary("summary", files, output_dir, genomon_root, config)
-
-    elif args.mode == "summary":
-        
-        if len(args.input_file) == 0:
-            files = find_file(args.mode, genomon_root, config)
-        else:
-            files = arg_to_file(args.input_file)
-            
-        call_summary(args.mode, files, output_dir, genomon_root, config)
-        
     else:
-        if len(args.input_file) == 0:
-            files = find_file(args.mode, genomon_root, config)
-        else:
-            files = arg_to_file(args.input_file)
+        (all_ids, sep_ids) = arg_to_file(args.mode, genomon_root, args, config)
+        num_al = len(all_ids["all"])
+        num_sp = 0
+        for key in sep_ids: num_sp += len(sep_ids[key])
+        if num_al == 0 and num_sp == 0:
+            (all_ids, sep_ids) = capture.sample_to_list(sample_conf, args.mode, genomon_root, config)
             
-        call_image_capture(args.mode, files, output_dir, genomon_root, config)
-        call_bam_pickup(args.mode, files, output_dir, genomon_root, config)
-        call_merge(args.mode, files, output_dir, genomon_root, config)
-
+        if args.mode == "qc":
+            call_merge_result(args.mode, all_ids, output_dir, genomon_root,  config)
+            call_merge_result(args.mode, sep_ids, output_dir, genomon_root,  config)
+        else:
+            if tools.config_getboolean(config, "igv", "enable") == True:
+                call_image_capture(args.mode,  (all_ids, sep_ids), output_dir, genomon_root, sample_conf, config)
+            if tools.config_getboolean(config, "bam", "enable") == True:
+                call_bam_pickup(args.mode,  (all_ids, sep_ids), output_dir, genomon_root, args.samtools, args.bedtools, sample_conf, config)
+            call_merge_result(args.mode, all_ids, output_dir, genomon_root, config)
+            call_merge_result(args.mode, sep_ids, output_dir, genomon_root, config)
+            

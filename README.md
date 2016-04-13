@@ -46,15 +46,15 @@ genomon_pa run all {output_dir} {genomon_root}
 ```
 $ genomon_pa run
 usage: genomon_pa run [-h] [--version] [--config_file CONFIG_FILE]
-                      {mutation,sv,summary,all} output_dir genomon_root
+                      {mutation,sv,qc,all} output_dir genomon_root
 
 ```
- - `{mutation,sv,summary,all}`
+ - `{mutation,sv,qc,all}`
 
     実行モード
     
     - all: すべて
-    - mutation / sv / summary: 各結果のみ
+    - mutation / sv / qc: 各結果のみ
 
 <br>
 
@@ -88,7 +88,7 @@ usage: genomon_pa run [-h] [--version] [--config_file CONFIG_FILE]
 {output_dir}
 │
 ├── merge.mutation.csv         <====== 各結果ファイルを結合したもの
-├── merge.summary.csv
+├── merge.qc.csv
 ├── merge.sv.csv
 │
 ├── mutation                   <====== svと同じ構成なので省略
@@ -150,8 +150,8 @@ genomon_post_analysis.cfg
 
 <pre>
 <font color="green"># 
-# $Id: README.md 126 2016-01-14 09:22:03Z aokada $
-# $Rev: 126 $
+# $Id: README.md 140 2016-04-13 07:25:15Z aokada $
+# $Rev: 140 $
 # 
 
 ###########
@@ -169,7 +169,7 @@ sv_igv = False
 sv_bam = False
 sv_merge = True
 
-summary_merge = True
+qc_merge = True
 
 [igv]
 capture_max = 100
@@ -202,7 +202,7 @@ col_pos_start = 1
 col_pos_chr2 = 3
 col_pos_end = 4
 
-[result_format_summary]
+[result_format_qc]
 sept = \t
 header = True
 suffix = .tsv
@@ -217,8 +217,8 @@ filters =
 # filters =  {'read_pairs_not_control': ('>=', '0.05'), 'fisher': ('>=', '2')}</font>
 filters = 
 
-[merge_format_summary]
-<font color="green"># now specification, summary has no option.</font>
+[merge_format_qc]
+<font color="green"># now specification, qc has no option.</font>
 filters = 
 
 <font color="green">###########
