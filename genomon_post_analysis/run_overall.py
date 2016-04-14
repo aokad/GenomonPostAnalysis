@@ -33,7 +33,7 @@ def arg_to_file(mode, genomon_root, args, config):
             
     [section_in, section_out] = tools.get_section(mode)
     
-    all_dict = {}
+    all_dict = {"all":[]}
     if tools.config_getboolean(config, section_out, "all_in_one") == True:
         al = []
         al.extend(text_to_list(args.input_file_case1, True))
@@ -43,8 +43,8 @@ def arg_to_file(mode, genomon_root, args, config):
                   tools.config_getboolean(config, section_out, "include_unpair") and tools.config_getboolean(config, section_out, "include_unpanel")))
         all_dict = {"all": al}
     
-    sep_dict = {}
-    if tools.config_getboolean(config, section_out, "all_in_one") == True:
+    sep_dict = {"case1":[], "case2":[], "case3":[], "case4":[]}
+    if tools.config_getboolean(config, section_out, "separate") == True:
         sep_dict["case1"] = text_to_list(args.input_file_case1, True)
         sep_dict["case2"] = text_to_list(args.input_file_case2, tools.config_getboolean(config, section_out, "include_unpanel"))
         sep_dict["case3"] = text_to_list(args.input_file_case3, tools.config_getboolean(config, section_out, "include_unpair"))

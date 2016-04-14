@@ -47,11 +47,15 @@ def _load_option(mode, config):
     sept = config.get(section_in, "sept")
     comment = tools.config_getstr(config, section_in, "comment")
     lack = tools.config_getstr(config, section_out, "lack_column_complement")
+    suffix = tools.config_getstr(config, section_in, "suffix")
+    suffix_filt = tools.config_getstr(config, section_in, "suffix_filt")
     
     # return option dict
-    return {"header": header, "sept": sept, "comment": comment, "lack": lack}
+    return {"header": header, "sept": sept, "comment": comment, "lack": lack, "suffix": suffix, "suffix_filt": suffix_filt}
     
 def _merge_metadata(files, option):
+
+    import os
 
     # read all file's meta-data
     meta_data = []
@@ -94,7 +98,7 @@ def _merge_metadata(files, option):
                 for f in values[key]:
                     if len(f_text) > 0:
                         f_text += ","
-                    f_text += f
+                    f_text += os.path.basename(f).replace(option["suffix"], "").replace(option["suffix_filt"], "")
                 meta_text += ":" + f_text
             meta_text += "\n"
     
