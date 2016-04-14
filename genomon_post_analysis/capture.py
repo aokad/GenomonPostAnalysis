@@ -4,11 +4,11 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: capture.py 140 2016-04-13 07:25:15Z aokada $
-$Rev: 140 $
+$Id: capture.py 141 2016-04-14 00:44:32Z aokada $
+$Rev: 141 $
 """
 
-def load_sample_conf(f):
+def load_sample_conf(f, check):
     import sample_conf
     import os
     
@@ -18,7 +18,7 @@ def load_sample_conf(f):
     
     sample = sample_conf.sample_conf
     try:
-        sample.parse_file(f)
+        sample.parse_file(f, check)
     except Exception as e:
         print ("failure sample_conf: %s, %s" % (f, e.message))
         return None
@@ -122,67 +122,57 @@ snapshot {name}
 """
 
     import genomon_post_analysis.subcode.tools as tools
-    import genomon_post_analysis.subcode.merge as merge
-    import genomon_post_analysis.subcode.data_frame as data_frame
 
     [section_in, section_out] = tools.get_section(mode)
+    
+    # result file
     suffix_f = tools.config_getstr(config, section_in, "suffix_filt")
     data_file = sample_to_result_file(ID, mode, path_options["genomon_root"], suffix_f)
-    
-    # options read
-    colpos = merge.load_potisions(mode, config)
-    data_options = {"sept": tools.config_getstr(config, section_in, "sept"),
-                    "header": tools.config_getboolean(config, section_in, "header"), 
-                    "comment": tools.config_getstr(config, section_in, "comment")}
-    [usecols, colsname] = merge.header_info(data_file, colpos, mode, data_options)
 
-    try:
-        if len(usecols) > 0:
-            # data read
-            df = data_frame.load_file(data_file, 
-                        sept = tools.config_getstr(config, section_in, "sept"), 
-                        header = tools.config_getboolean(config, section_in, "header"), 
-                        usecol = usecols)
-            df.title = colsname
-            
-            col_chr1 = df.name_to_index("chr1")
-            col_chr2 = df.name_to_index("chr2")
-            col_start = df.name_to_index("start")
-            col_end = df.name_to_index("end")
-        else:
-            print ("column position is invalid. check your config file.")
-            return False
-
-    except IndexError as e:
-        print ("column position is invalid. check your config file.")
-        return False
-    except Exception as e:
-        print ("failure open file %s, %s" % (data_file, e.message))
-        return False
-
+    # use bams
     bam_tumor = sample_to_bam_file(ID, mode, path_options["genomon_root"], tools.config_getstr(config, "bam", "input_bam_suffix"))
     normal = sample_to_pair(sample_conf, mode, ID)
     bam_normal = ""
     if normal != None:
         bam_normal = sample_to_bam_file(normal, mode, path_options["genomon_root"], tools.config_getstr(config, "bam", "input_bam_suffix"))
 
+    # output file
     out_tumor_name = "%s/%s" % (path_options["output_igv_dir"], ID)
     
-    capt_max = config.getint("igv", "capture_max")
+    # options
     width = config.getint("igv", "capture_width")    
-
+    sept = tools.config_getstr(config, section_in, "sept").replace("\\t", "\t").replace("\\n", "\n").replace("\\r", "\r")
+    # read
     capt_list = []
     capt_text = ""
     
-    for i in range(len(df.data)):
+    header = []
+    
+    for line in open(data_file):
+        if len(capt_list) >= config.getint("igv", "capture_max"):
+            break
         
-        if len(capt_list) >= capt_max:
+        line = line.rstrip()
+        if len(line.replace(sept, "")) == 0:
             continue
+        
+        if line.find(tools.config_getstr(config, section_in, "comment")) == 0:
+            continue
+        
+        if len(header) == 0:
+            header = line.split(sept)
+            col_chr1 = header.index(tools.config_getstr(config, section_in, "col_chr1"))
+            col_chr2 = header.index(tools.config_getstr(config, section_in, "col_chr2"))
+            col_start = header.index(tools.config_getstr(config, section_in, "col_start"))
+            col_end = header.index(tools.config_getstr(config, section_in, "col_end"))
+            continue
+        
+        data = line.split(sept)
 
-        chr1 = df.data[i][col_chr1]
-        start = int(df.data[i][col_start])
-        chr2 = df.data[i][col_chr2]
-        end = int(df.data[i][col_end])
+        chr1 = data[col_chr1]
+        start = int(data[col_start])
+        chr2 = data[col_chr2]
+        end = int(data[col_end])
         
         fname = "{0}_{1}_{2}_{3}_{4}".format(out_tumor_name, chr1, start, chr2, end)
         if (fname in capt_list) == False:
@@ -200,6 +190,7 @@ snapshot {name}
                     start2 = 0
                 capt_text += cmd_capt.format(chr = chr2, start = start2, end = end + width, name = fname + "_2.png")
     
+    # write
     if len(capt_text) > 0:
         cmd = cmd_header
         cmd += cmd_new_tumor.format(tumor_bam = bam_tumor)
@@ -250,46 +241,12 @@ rm {bed}
 """
 
     import genomon_post_analysis.subcode.tools as tools
-    import genomon_post_analysis.subcode.merge as merge
-    import genomon_post_analysis.subcode.data_frame as data_frame
-    
     import os
     
     # options read
     [section_in, section_out] = tools.get_section(mode)
     suffix_f = tools.config_getstr(config, section_in, "suffix_filt")
     data_file = sample_to_result_file(ID, mode, path_options["genomon_root"], suffix_f)
-    
-    # options read
-    colpos = merge.load_potisions(mode, config)
-    data_options = {"sept": tools.config_getstr(config, section_in, "sept"),
-                    "header": tools.config_getboolean(config, section_in, "header"), 
-                    "comment": tools.config_getstr(config, section_in, "comment")}
-    [usecols, colsname] = merge.header_info(data_file, colpos, mode, data_options)
-    
-    # data read
-    try:
-        if len(usecols) > 0:
-            df = data_frame.load_file(data_file, 
-                        sept = tools.config_getstr(config, section_in, "sept"), 
-                        header = tools.config_getboolean(config, section_in, "header"), 
-                        usecol = usecols)
-            df.title = colsname
-            
-            col_chr1 = df.name_to_index("chr1")
-            col_chr2 = df.name_to_index("chr2")
-            col_start = df.name_to_index("start")
-            col_end = df.name_to_index("end")
-        else:
-            print ("column position is invalid. check your config file.")
-            return False
-    
-    except IndexError as e:
-        print ("column position is invalid. check your config file.")
-        return False
-    except Exception as e:
-        print ("failure open file %s, %s" % (data_file, e.message))
-        return False
 
     # output file name
     if os.path.exists(path_options["output_bam_dir"] + "/" + ID) == False:
@@ -310,10 +267,11 @@ rm {bed}
     output_bam_suffix = os.path.splitext(config.get("bam", "output_bam_suffix"))[0]
     samtools = path_options["samtools"]
     bedtools = path_options["bedtools"]
+    sept = tools.config_getstr(config, section_in, "sept").replace("\\t", "\t").replace("\\n", "\n").replace("\\r", "\r")
     
     # create command text
     bed1_text = cmd_bed1.format(bedtools = bedtools, bed = out_tumor_name + ".bed")
-    bed2_text = ""
+    #bed2_text = ""
     bed3_text = cmd_bed3.format(bedtools = bedtools, bed = out_tumor_name + ".bed")
     
     cmd_text = cmd_view.format(samtools = samtools, 
@@ -327,37 +285,67 @@ rm {bed}
                                 output_bam = out_normal_name + output_bam_suffix)
     cmd_text += cmd_rm_bed.format(bed = out_tumor_name + ".bed")
 
-    for i in range(len(df.data)):
-
-        start = df.data[i][col_start] - width
-        if start < 0:
-            start = 0
-        bed2_text += cmd_bed2.format(chr = df.data[i][col_chr1], 
-                           start = start,
-                           end = df.data[i][col_start] + width,
-                           bed = out_tumor_name + ".bed"
-                           )
-        start = df.data[i][col_end] - width
-        if start < 0:
-            start = 0
-        bed2_text += cmd_bed2.format(chr = df.data[i][col_chr2], 
-                           start = start,
-                           end = df.data[i][col_end] + width,
-                           bed = out_tumor_name + ".bed"
-                           )
-    
-    if len(bed2_text) > 0 :
-        f_sh = open(path_options["output_file"], "w")
-        f_sh.write(cmd_header.format(log = path_options["output_log_dir"])) 
-        f_sh.write(bed1_text)
-        f_sh.write(bed2_text)
-        f_sh.write(bed3_text)
-        f_sh.write(cmd_text)
-        f_sh.close()
+    # write script 1
+    f_sh = open(path_options["output_file"], "w")
+    f_sh.write(cmd_header.format(log = path_options["output_log_dir"])) 
+    f_sh.write(bed1_text)
         
-        return True
-    else:
-        return False
+    # read
+    header = []
+    bed2_text = []
+    lines_count = 0
+    for line in open(data_file):
+        line = line.rstrip()
+        if len(line.replace(sept, "")) == 0:
+            continue
+        
+        if line.find(tools.config_getstr(config, section_in, "comment")) == 0:
+            continue
+        
+        if len(header) == 0:
+            header = line.split(sept)
+            col_chr1 = header.index(tools.config_getstr(config, section_in, "col_chr1"))
+            col_chr2 = header.index(tools.config_getstr(config, section_in, "col_chr2"))
+            col_start = header.index(tools.config_getstr(config, section_in, "col_start"))
+            col_end = header.index(tools.config_getstr(config, section_in, "col_end"))
+            continue
+        
+        data = line.split(sept)
+
+        start = int(data[col_start]) - width
+        if start < 0:
+            start = 0
+        bed2_text.append(cmd_bed2.format(chr = data[col_chr1], 
+                           start = start,
+                           end = int(data[col_start]) + width,
+                           bed = out_tumor_name + ".bed"
+                           ))
+        lines_count += 1
+        
+        start = int(data[col_end]) - width
+        if start < 0:
+            start = 0
+        bed2_text.append(cmd_bed2.format(chr = data[col_chr2], 
+                           start = start,
+                           end = int(data[col_end]) + width,
+                           bed = out_tumor_name + ".bed"
+                           ))
+        lines_count += 1
+        
+        if (lines_count > 10000):
+            f_sh.writelines(bed2_text)
+            bed2_text = []
+            lines_count = 0
+
+    if (lines_count > 0):
+        f_sh.writelines(bed2_text)
+            
+    # write script 3
+    f_sh.write(bed3_text)
+    f_sh.write(cmd_text)
+    f_sh.close()
+    
+    return True
         
 def merge_capture_bat(files, output_file, delete_flg):
 

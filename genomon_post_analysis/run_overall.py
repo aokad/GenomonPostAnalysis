@@ -4,7 +4,7 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: run_overall.py 140 2016-04-13 07:25:15Z aokada $
+$Id: run_overall.py 141 2016-04-14 00:44:32Z aokada $
 """
 prog = "genomon_pa run"
 
@@ -168,7 +168,7 @@ def call_merge_result(mode, ids, output_dir, genomon_root, config):
                 for iid in ids[key]:
                     files.append(capture.sample_to_result_file(iid, mode, genomon_root, suffix_u))
 
-                merge.merge_result(files, ids[key], output_dir + "/" + output_name, mode, config)
+                merge.merge_result_fast(files, ids[key], output_dir + "/" + output_name, mode, config)
     
         # filterd
         output_name = tools.config_getstr(config, section_out, "output_filt_" + key)
@@ -177,7 +177,7 @@ def call_merge_result(mode, ids, output_dir, genomon_root, config):
             for iid in ids[key]:
                 files.append(capture.sample_to_result_file(iid, mode, genomon_root, suffix_f))
             
-            merge.merge_result(files, ids[key], output_dir + "/" + output_name, mode, config)
+            merge.merge_result_fast(files, ids[key], output_dir + "/" + output_name, mode, config)
     
 def main(argv):
 
@@ -213,7 +213,7 @@ def main(argv):
     # config
     [config, conf_file] = tools.load_config(args.config_file)
     
-    sample_conf = capture.load_sample_conf(args.sample_sheet)
+    sample_conf = capture.load_sample_conf(args.sample_sheet, False)
     if sample_conf == None:
         return
         

@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import os
-from genomon_pipeline.config.run_conf import *
+#from genomon_pipeline.config.run_conf import *
 
 class Sample_conf(object):
 
@@ -19,7 +19,7 @@ class Sample_conf(object):
         #
     
 
-    def parse_file(self, file_path):
+    def parse_file(self, file_path, bam_check):
 
         file_ext = os.path.splitext(file_path)[1]
 
@@ -55,7 +55,7 @@ class Sample_conf(object):
             file_data_trimmed.append(line_data)
 
 
-        self.parse_data(file_data_trimmed)
+        self.parse_data(file_data_trimmed, bam_check)
 
 
     def parse_csv(self, file_path):
@@ -99,7 +99,7 @@ class Sample_conf(object):
         return _file_data
 
 
-    def parse_data(self, _data ):
+    def parse_data(self, _data, bam_check):
     
         mode = ''
        
@@ -166,7 +166,7 @@ class Sample_conf(object):
                 sequence2 = row[2].split(';')
 
                 for seq in sequence1 + sequence2:
-                    if not os.path.exists(seq):
+                    if not os.path.exists(seq) and bam_check:
                         err_msg = sampleID + ": " + seq +  " does not exists" 
                         raise ValueError(err_msg)
 
@@ -186,13 +186,13 @@ class Sample_conf(object):
 
                 sampleID_list.append(sampleID)
 
-                if len(row) != 2:
-                    err_msg = sampleID + ": only one bam file is allowed"
-                    raise ValueError(err_msg)
+#                if len(row) != 2:
+#                    err_msg = sampleID + ": only one bam file is allowed"
+#                    raise ValueError(err_msg)
 
                 sequences = row[1]
                 for seq in sequences.split(";"):
-                    if not os.path.exists(seq):
+                    if not os.path.exists(seq) and bam_check:
                         err_msg = sampleID + ": " + seq +  " does not exists"
                         raise ValueError(err_msg)
 
@@ -212,17 +212,17 @@ class Sample_conf(object):
 
                 sampleID_list.append(sampleID)
 
-                if len(row) != 2:
-                    err_msg = sampleID + ": only one bam file is allowed"
-                    raise ValueError(err_msg)
+#                if len(row) != 2:
+#                    err_msg = sampleID + ": only one bam file is allowed"
+#                    raise ValueError(err_msg)
 
                 sequence = row[1]
-                if not os.path.exists(sequence):
+                if not os.path.exists(sequence) and bam_check:
                     err_msg = sampleID + ": " + sequence +  " does not exists"
                     raise ValueError(err_msg)
                 
                 sequence_prefix, ext = os.path.splitext(sequence)
-                if (not os.path.exists(sequence + '.bai')) and (not os.path.exists(sequence_prefix + '.bai')):
+                if (not os.path.exists(sequence + '.bai')) and (not os.path.exists(sequence_prefix + '.bai')) and bam_check:
                     err_msg = sampleID + ": " + sequence +  " index does not exists"
                     raise ValueError(err_msg)
 
