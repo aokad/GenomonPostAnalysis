@@ -4,7 +4,7 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: run_overall.py 141 2016-04-14 00:44:32Z aokada $
+$Id: run_overall.py 143 2016-04-15 02:28:10Z aokada $
 """
 prog = "genomon_pa run"
 
@@ -90,6 +90,9 @@ def call_image_capture(mode, ids_tuple, output_dir, genomon_root, sample_conf, c
 
             if capture.write_capture_bat(path_options, ID, sample_conf, mode, config) == True:
                 files_capt.append(f_capt)
+            else:
+                if os.path.exists(f_capt) == True:
+                    os.remove(f_capt)
 
     capture.merge_capture_bat(files_capt, output_dir + "/capture_script/capture.bat", True)
 
@@ -145,7 +148,9 @@ def call_bam_pickup(mode, ids_tuple, output_dir, genomon_root, arg_samtools, arg
                
             if capture.write_pickup_script(path_options, ID, sample_conf, mode, config) == True:
                 files_pick.append(f_pick)
-            
+            else:
+                if os.path.exists(f_pick) == True:
+                    os.remove(f_pick)
     capture.merge_pickup_script(files_pick, output_script_dir + "/pickup.sh")
     
 def call_merge_result(mode, ids, output_dir, genomon_root, config):
@@ -168,7 +173,7 @@ def call_merge_result(mode, ids, output_dir, genomon_root, config):
                 for iid in ids[key]:
                     files.append(capture.sample_to_result_file(iid, mode, genomon_root, suffix_u))
 
-                merge.merge_result_fast(files, ids[key], output_dir + "/" + output_name, mode, config)
+                merge.merge_result(files, ids[key], output_dir + "/" + output_name, mode, config)
     
         # filterd
         output_name = tools.config_getstr(config, section_out, "output_filt_" + key)
@@ -177,7 +182,7 @@ def call_merge_result(mode, ids, output_dir, genomon_root, config):
             for iid in ids[key]:
                 files.append(capture.sample_to_result_file(iid, mode, genomon_root, suffix_f))
             
-            merge.merge_result_fast(files, ids[key], output_dir + "/" + output_name, mode, config)
+            merge.merge_result(files, ids[key], output_dir + "/" + output_name, mode, config)
     
 def main(argv):
 

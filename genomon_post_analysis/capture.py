@@ -4,8 +4,8 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: capture.py 141 2016-04-14 00:44:32Z aokada $
-$Rev: 141 $
+$Id: capture.py 143 2016-04-15 02:28:10Z aokada $
+$Rev: 143 $
 """
 
 def load_sample_conf(f, check):
@@ -122,7 +122,8 @@ snapshot {name}
 """
 
     import genomon_post_analysis.subcode.tools as tools
-
+    import os
+    
     [section_in, section_out] = tools.get_section(mode)
     
     # result file
@@ -144,10 +145,19 @@ snapshot {name}
     sept = tools.config_getstr(config, section_in, "sept").replace("\\t", "\t").replace("\\n", "\n").replace("\\r", "\r")
     # read
     capt_list = []
-    capt_text = ""
     
+    # write script 1
+    f = open(path_options["output_file"] + ".tmp", "w")
+    f.write(cmd_header)
+    f.write(cmd_new_tumor.format(tumor_bam = bam_tumor))
+    if len(bam_normal) > 0:
+        f.write(cmd_new_normal.format(normal_bam = bam_normal))
+            
+    # read
     header = []
-    
+    capt_text = []
+    lines_count = 0
+    enable_data = False
     for line in open(data_file):
         if len(capt_list) >= config.getint("igv", "capture_max"):
             break
@@ -175,36 +185,41 @@ snapshot {name}
         end = int(data[col_end])
         
         fname = "{0}_{1}_{2}_{3}_{4}".format(out_tumor_name, chr1, start, chr2, end)
-        if (fname in capt_list) == False:
-            capt_list.append(fname)
-            
-            if (chr1 == chr2) and ((long(end) - long(start)) < (width / 2)):
-                capt_text += cmd_capt.format(chr = chr1, start = start - width, end = start + width, name = fname + ".png")
-            else:
-                start2 = start - width
-                if start2 < 0:
-                    start2 = 0
-                capt_text += cmd_capt.format(chr = chr1, start = start2, end = start + width, name = fname + "_1.png")
-                start2 = end-width
-                if start2 < 0:
-                    start2 = 0
-                capt_text += cmd_capt.format(chr = chr2, start = start2, end = end + width, name = fname + "_2.png")
-    
-    # write
-    if len(capt_text) > 0:
-        cmd = cmd_header
-        cmd += cmd_new_tumor.format(tumor_bam = bam_tumor)
-        if len(bam_normal) > 0:
-            cmd += cmd_new_normal.format(normal_bam = bam_normal) 
-        cmd += capt_text
+        if (fname in capt_list) == True:
+            continue
         
-        f = open(path_options["output_file"], "w")
-        f.write(cmd)   
-        f.close()
+        capt_list.append(fname)
+        
+        if (chr1 == chr2) and ((long(end) - long(start)) < (width / 2)):
+            capt_text.append(cmd_capt.format(chr = chr1, start = start - width, end = start + width, name = fname + ".png"))
+            lines_count += 1
+        else:
+            start2 = start - width
+            if start2 < 0:
+                start2 = 0
+            capt_text.append(cmd_capt.format(chr = chr1, start = start2, end = start + width, name = fname + "_1.png"))
+            lines_count += 1
+            
+            start2 = end-width
+            if start2 < 0:
+                start2 = 0
+            capt_text.append(cmd_capt.format(chr = chr2, start = start2, end = end + width, name = fname + "_2.png"))
+            lines_count += 1
+
+        enable_data = True
+        
+        if (lines_count > 10000):
+            f.writelines(capt_text)
+            capt_text = []
+            lines_count = 0
+
+    if (lines_count > 0):
+        f.writelines(capt_text)                
     
-        return True
-    else:
-        return False
+    f.close()
+    os.rename(path_options["output_file"] + ".tmp", path_options["output_file"])
+    
+    return enable_data
   
 def write_pickup_script(path_options, ID, sample_conf, mode, config):
 
@@ -286,7 +301,7 @@ rm {bed}
     cmd_text += cmd_rm_bed.format(bed = out_tumor_name + ".bed")
 
     # write script 1
-    f_sh = open(path_options["output_file"], "w")
+    f_sh = open(path_options["output_file"] + ".tmp", "w")
     f_sh.write(cmd_header.format(log = path_options["output_log_dir"])) 
     f_sh.write(bed1_text)
         
@@ -294,6 +309,7 @@ rm {bed}
     header = []
     bed2_text = []
     lines_count = 0
+    enable_data = False
     for line in open(data_file):
         line = line.rstrip()
         if len(line.replace(sept, "")) == 0:
@@ -332,6 +348,8 @@ rm {bed}
                            ))
         lines_count += 1
         
+        enable_data = True
+        
         if (lines_count > 10000):
             f_sh.writelines(bed2_text)
             bed2_text = []
@@ -344,28 +362,28 @@ rm {bed}
     f_sh.write(bed3_text)
     f_sh.write(cmd_text)
     f_sh.close()
+    os.rename(path_options["output_file"] + ".tmp", path_options["output_file"])
     
-    return True
+    return enable_data
         
 def merge_capture_bat(files, output_file, delete_flg):
 
     import os
     
-    write_lines = []
+    f_out = open(output_file + ".tmp", "w")
     
     for bat_file in files:
         if os.path.exists(bat_file) == False:
             print "[WARNING] file is not exist. %s" % bat_file
             continue
         
-        f = open(bat_file)
-        write_lines.append(f.read()) 
-        f.close()
-    
-    f = open(output_file, "w")
-    f.writelines(write_lines)
-    f.close()
+        f_in = open(bat_file)
+        f_out.write(f_in.read()) 
+        f_in.close()
 
+    f_out.close()
+    os.rename(output_file + ".tmp", output_file)
+    
     if delete_flg == True:
         for bat_file in files:
             os.remove(bat_file)
@@ -377,17 +395,25 @@ def merge_pickup_script(files, output_file):
     header = """#!/bin/bash
 #
 """
+    f = open(output_file + ".tmp", "w")
     write_lines = [header]
-    
+    lines_counter = 0
     for bat_file in files:
         if os.path.exists(bat_file) == False:
             print "[WARNING] file is not exist. %s" % bat_file
             continue
         
         write_lines.append("qsub %s\nsleep 1s\n" % bat_file)
+        lines_counter += 1
+        if lines_counter > 10000:
+            f.writelines(write_lines)
+            write_lines = []
+            lines_counter = 0
     
-    f = open(output_file, "w")
-    f.writelines(write_lines)
+    if lines_counter > 0:
+        f.writelines(write_lines)
+
     f.close()
+    os.rename(output_file + ".tmp", output_file)
     
     os.chmod(output_file, 0744)

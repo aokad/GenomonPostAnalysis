@@ -4,7 +4,7 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: merge.py 141 2016-04-14 00:44:32Z aokada $
+$Id: merge.py 144 2016-04-15 04:35:17Z aokada $
 """
 
 import tools
@@ -96,7 +96,7 @@ def _merge_metadata(files, option):
                 f_text = ""
                 for f in values[key]:
                     if len(f_text) > 0:
-                        f_text += ","
+                        f_text += ";"
                     f_text += os.path.basename(f).replace(option["suffix"], "").replace(option["suffix_filt"], "")
                 meta_text += ":" + f_text
             meta_text += "\n"
@@ -130,7 +130,7 @@ def _merge_title(files, option):
     
     return merged_title
 
-def merge_result_fast(files, ids, output_file, mode, config, extract = False):
+def merge_result(files, ids, output_file, mode, config, extract = False):
 
     def calc_map(header, all_header):
         mapper = [-1]*len(all_header)
@@ -177,7 +177,7 @@ def merge_result_fast(files, ids, output_file, mode, config, extract = False):
         titles.insert(0, positions["option"]["id"])
 
     # write meta-data to file
-    f = open(output_file, mode = "w")
+    f = open(output_file + ".tmp", mode = "w")
     f.write(meta_text)
     f.write(",".join(titles))
     f.write("\n")
@@ -227,6 +227,7 @@ def merge_result_fast(files, ids, output_file, mode, config, extract = False):
         
     f.close()
     
+    os.rename(output_file + ".tmp", output_file)
     return positions
       
 if __name__ == "__main__":
