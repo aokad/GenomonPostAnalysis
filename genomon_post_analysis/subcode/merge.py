@@ -9,6 +9,19 @@ $Id: merge.py 144 2016-04-15 04:35:17Z aokada $
 
 import tools
 
+def _split_char(mode, config):
+    [section_in, section_out] = tools.get_section(mode)
+    sept_in = config.get(section_in, "sept")
+    sept_out= config.get(section_out, "sept")
+    
+    if sept_in == sept_out:
+        return ["", ""]
+        
+    if sept_in == ";" and sept_out == ",":
+            return [",", " "]
+        
+    return [",", ";"]
+    
 def load_potisions(mode, config):
 
     [section_in, section_out] = tools.get_section(mode)
@@ -48,9 +61,10 @@ def _load_option(mode, config):
     lack = tools.config_getstr(config, section_out, "lack_column_complement")
     suffix = tools.config_getstr(config, section_in, "suffix")
     suffix_filt = tools.config_getstr(config, section_in, "suffix_filt")
+    sept_out = config.get(section_out, "sept").replace("\\t", "\t").replace("\\n", "\n").replace("\\r", "\r")
     
     # return option dict
-    return {"header": header, "sept": sept, "comment": comment, "lack": lack, "suffix": suffix, "suffix_filt": suffix_filt}
+    return {"header": header, "sept": sept, "comment": comment, "lack": lack, "suffix": suffix, "suffix_filt": suffix_filt, "sept_out":sept_out}
     
 def _merge_metadata(files, option):
 
@@ -103,12 +117,13 @@ def _merge_metadata(files, option):
     
     return meta_text
 
-def _merge_title(files, option):
+def _merge_title(files, mode, option, config):
 
     if option["header"] == False:
         return []
         
     # titles
+    [rep1, rep2] = _split_char(mode, config)
     merged_title = []
     for file_path in files:
         title = []
@@ -121,7 +136,7 @@ def _merge_title(files, option):
             if line.find(option["comment"]) == 0:
                 continue
                 
-            title = line.replace(",", ";").split(option["sept"])
+            title = line.replace(rep1, rep2).split(option["sept"])
             break
         
         for col in title:
@@ -131,6 +146,15 @@ def _merge_title(files, option):
     return merged_title
 
 def merge_result(files, ids, output_file, mode, config, extract = False):
+
+    [section_in, section_out] = tools.get_section(mode)
+    
+    if tools.config_getboolean(config, section_in, "header") == True:
+        return with_header(files, ids, output_file, mode, config, extract)
+    else:
+        return with_noheader(files, ids, output_file, mode, config, extract)
+    
+def with_header(files, ids, output_file, mode, config, extract = False):
 
     def calc_map(header, all_header):
         mapper = [-1]*len(all_header)
@@ -162,7 +186,7 @@ def merge_result(files, ids, output_file, mode, config, extract = False):
     positions = load_potisions(mode, config)
     
     if extract == False:
-        titles = _merge_title(files, option)
+        titles = _merge_title(files, mode, option, config)
     else:
         titles = []
         for key in positions["must"]:
@@ -176,10 +200,12 @@ def merge_result(files, ids, output_file, mode, config, extract = False):
     if (positions["option"]["id"] in titles) == False:
         titles.insert(0, positions["option"]["id"])
 
+    [rep1, rep2] = _split_char(mode, config)
+    
     # write meta-data to file
     f = open(output_file + ".tmp", mode = "w")
     f.write(meta_text)
-    f.write(",".join(titles))
+    f.write(option["sept_out"].join(titles))
     f.write("\n")
     
     for idx in range(len(files)):
@@ -197,7 +223,7 @@ def merge_result(files, ids, output_file, mode, config, extract = False):
             if line.find(option["comment"]) == 0:
                 continue
             
-            line = line.replace(",", ";") 
+            line = line.replace(rep1, rep2) 
             if len(header) == 0:
                 header = line.split(option["sept"])
                 mapper = calc_map(header, titles)
@@ -214,7 +240,7 @@ def merge_result(files, ids, output_file, mode, config, extract = False):
                 else:
                     sort_data.append(data[mapper[i]])
             
-            lines.append(",".join(sort_data) + "\n")
+            lines.append(option["sept_out"].join(sort_data) + "\n")
             lines_count += 1
             
             if (lines_count > 10000):
@@ -226,8 +252,115 @@ def merge_result(files, ids, output_file, mode, config, extract = False):
             f.writelines(lines)
         
     f.close()
-    
     os.rename(output_file + ".tmp", output_file)
+    return positions
+
+def with_noheader(files, ids, output_file, mode, config, extract = False):
+    
+    import os
+
+    if len(files) == 0:
+        return {}
+        
+    for file_path in files:
+        if os.path.exists(file_path) == False:
+            print ("[ERROR] file is not exist. %s" % file_path)
+            files.remove(file_path)
+            continue 
+    
+    option = _load_option(mode, config)
+    if option["header"] == True:
+        print ("[ERROR] this is function for no-header data.")
+        return {}
+        
+    meta_text = _merge_metadata(files, option)
+    positions = load_potisions(mode, config)
+
+    usecols = []
+    for key in positions["must"]:
+        usecols.append(positions["must"][key])
+            
+    for key in positions["option"]:
+        usecols.append(positions["option"][key])
+    
+    add_id = False
+    if ("id" in positions["option"]) == False:
+        add_id = True
+            
+    [rep1, rep2] = _split_char(mode, config)
+    
+    # write meta-data to file
+    f = open(output_file + ".tmp", mode = "w")
+    f.write(meta_text)
+    
+    titles = []
+    for idx in range(len(files)):
+        file_path = files[idx]
+
+        lines = []
+        lines_count = 0
+        for line in open(file_path):
+            line = line.rstrip()
+            if len(line.replace(option["sept"], "")) == 0:
+                continue
+            
+            if line.find(option["comment"]) == 0:
+                continue
+            
+            line = line.replace(rep1, rep2)
+            
+            data = line.split(option["sept"])
+            
+            # header
+            if titles == []:
+                if add_id == True:
+                    titles.append("id")
+                    
+                for i in range(len(data)):
+                    if extract == True:
+                        if i in usecols:
+                            titles.append("v%d" % i)
+                    else:
+                        titles.append("v%d" % i)
+
+                lines.append(option["sept_out"].join(titles) + "\n")
+                
+            # add id
+            cat_data = []
+            if add_id == True:
+                cat_data.append(ids[idx])
+                
+            for i in range(len(data)):
+                if extract == True:
+                    if i in usecols:
+                        cat_data.append(data[i])
+                else:
+                    cat_data.append(data[i])
+            
+            lines.append(option["sept_out"].join(cat_data) + "\n")
+            lines_count += 1
+            
+            if (lines_count > 10000):
+                f.writelines(lines)
+                lines = []
+                lines_count = 0
+
+        if (lines_count > 0):
+            f.writelines(lines)
+        
+    f.close()
+    os.rename(output_file + ".tmp", output_file)
+    
+    # update positions
+    for key in positions["must"]:
+        positions["must"][key] = "v%d" % (positions["must"][key])
+            
+    for key in positions["option"]:
+        positions["option"][key] = "v%d" % (positions["option"][key])
+        
+    if ("id" in positions["option"]) == False:
+        positions["option"]["id"] = "id"
+        
     return positions
       
 if __name__ == "__main__":

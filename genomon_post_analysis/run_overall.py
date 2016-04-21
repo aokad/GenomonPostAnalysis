@@ -234,9 +234,9 @@ def main(argv):
         
         (all_ids, sep_ids) = capture.sample_to_list(sample_conf, "mutation", genomon_root, config)
         if tools.config_getboolean(config, "igv", "enable") == True:
-            call_image_capture("mutation", all_ids, output_dir, genomon_root, sample_conf, config)
+            call_image_capture("mutation", (all_ids, sep_ids), output_dir, genomon_root, sample_conf, config)
         if tools.config_getboolean(config, "bam", "enable") == True:
-            call_bam_pickup("mutation", all_ids, output_dir, genomon_root, args.samtools, args.bedtools, sample_conf, config)
+            call_bam_pickup("mutation", (all_ids, sep_ids), output_dir, genomon_root, args.samtools, args.bedtools, sample_conf, config)
         call_merge_result("mutation", all_ids, output_dir, genomon_root, config)
         call_merge_result("mutation", sep_ids, output_dir, genomon_root, config)
         
