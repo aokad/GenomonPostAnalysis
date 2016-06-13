@@ -51,22 +51,22 @@ def sample_to_list(sample, mode, genomon_root, config):
 
     import genomon_post_analysis.subcode.tools as tools
     
-    all_dict = {"all":[]}
-    sep_dict = {"case1":[], "case2":[], "case3":[], "case4":[]}
-
+    sample_dict = {"all":[], "case1":[], "case2":[], "case3":[], "case4":[]}
+    
     if mode == "qc":
         items = []
         for item in sample.qc:
             items.append(item)
-
-        return ({"all": items}, sep_dict)
+        
+        sample_dict["all"] = items
+        return sample_dict
     
     if mode == "mutation":
         li = sample.mutation_call
     elif mode == "sv":
         li = sample.sv_detection
     else:
-        return (all_dict, sep_dict)
+        return sample_dict
         
     tmr_nrml_list = []
     tmr_nrml_none = []
@@ -96,12 +96,15 @@ def sample_to_list(sample, mode, genomon_root, config):
         al.extend(tmr_nrml_none)
         al.extend(tmr_none_list)
         al.extend(tmr_none_none)
-        all_dict = {"all": al}
+        sample_dict["all"] = al
     
     if tools.config_getboolean(config, section_out, "separate") == True:
-        sep_dict = {"case1": tmr_nrml_list, "case2": tmr_nrml_none, "case3": tmr_none_list, "case4": tmr_none_none}
-    
-    return(all_dict, sep_dict)
+        sample_dict["case1"] = tmr_nrml_list
+        sample_dict["case2"] = tmr_nrml_none
+        sample_dict["case3"] = tmr_none_list
+        sample_dict["case4"] = tmr_none_none
+        
+    return sample_dict
     
 def write_capture_bat(path_options, ID, sample_conf, mode, config):
 

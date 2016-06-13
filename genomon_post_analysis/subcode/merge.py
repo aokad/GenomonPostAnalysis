@@ -4,7 +4,7 @@ Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
 
-$Id: merge.py 144 2016-04-15 04:35:17Z aokada $
+$Id: merge.py 107 2016-05-26 08:24:48Z aokada $
 """
 
 import tools
@@ -133,7 +133,7 @@ def _merge_title(files, mode, option, config):
             if len(line.replace(option["sept"], "")) == 0:
                 continue
             
-            if line.find(option["comment"]) == 0:
+            if len(option["comment"]) > 0 and line.find(option["comment"]) == 0:
                 continue
                 
             title = line.replace(rep1, rep2).split(option["sept"])
@@ -220,7 +220,7 @@ def with_header(files, ids, output_file, mode, config, extract = False):
             if len(line.replace(option["sept"], "")) == 0:
                 continue
             
-            if line.find(option["comment"]) == 0:
+            if len(option["comment"]) > 0 and line.find(option["comment"]) == 0:
                 continue
             
             line = line.replace(rep1, rep2) 
@@ -304,7 +304,7 @@ def with_noheader(files, ids, output_file, mode, config, extract = False):
             if len(line.replace(option["sept"], "")) == 0:
                 continue
             
-            if line.find(option["comment"]) == 0:
+            if len(option["comment"]) > 0 and line.find(option["comment"]) == 0:
                 continue
             
             line = line.replace(rep1, rep2)
@@ -362,6 +362,14 @@ def with_noheader(files, ids, output_file, mode, config, extract = False):
         positions["option"]["id"] = "id"
         
     return positions
-      
+
+def position_to_dict(position):
+    di = {}
+    for key in position["must"]:
+        di[key] = position["must"][key]
+    for key in position["option"]:
+        di[key] = position["option"][key]
+    return di
+        
 if __name__ == "__main__":
     pass
