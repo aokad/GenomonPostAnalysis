@@ -171,6 +171,7 @@ def call_merge_result(mode, ids_dict, output_dir, genomon_root, config):
     
     print "=== [%s] merge result file. ===" % mode
     
+    import os 
     import genomon_post_analysis.subcode.merge as subcode_merge
     import merge
     
@@ -186,7 +187,8 @@ def call_merge_result(mode, ids_dict, output_dir, genomon_root, config):
         
         # unfilterd
         output_name = tools.config_getstr(config, section_out, "output_" + key)
-        if output_name != "":
+
+        if output_name != "" and os.path.exists(output_dir + "/" + output_name) == False:
             if merge_unfilt == True:
                 files = []
                 for iid in ids_dict[key]:
@@ -199,7 +201,7 @@ def call_merge_result(mode, ids_dict, output_dir, genomon_root, config):
     
         # filterd
         output_name = tools.config_getstr(config, section_out, "output_filt_" + key)
-        if output_name != "":
+        if output_name != "" and os.path.exists(output_dir + "/" + output_name) == False:
             files = []
             for iid in ids_dict[key]:
                 files.append(capture.sample_to_result_file(iid, mode, genomon_root, suffix_f))
