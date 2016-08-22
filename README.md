@@ -46,7 +46,7 @@ genomon_pa run all {output_dir} {genomon_root}
 ```
 $ genomon_pa run
 usage: genomon_pa run [-h] [--version] [--config_file CONFIG_FILE]
-                      {mutation,sv,qc,all} output_dir genomon_root
+                      {all,mutation,sv,qc,fusion,starqc} output_dir genomon_root
 
 ```
  - `{mutation,sv,qc,all}`
@@ -54,7 +54,8 @@ usage: genomon_pa run [-h] [--version] [--config_file CONFIG_FILE]
     実行モード
     
     - all: すべて
-    - mutation / sv / qc: 各結果のみ
+    - mutation / sv / qc: (DNA) 各結果のみ
+    - fusion / starqc: (RNA) 各結果のみ
 
 <br>
 
@@ -141,113 +142,6 @@ IGVを起動して実行してください。
 
 -------------------------------------------------------------------------
 
-### (3) 設定ファイル
+## A. License 
 
- - 設定ファイルはインストールディレクトリ直下にあります。
- - <font color="red">赤字は今後変更がありそうな項目</font>
-
-genomon_post_analysis.cfg
-
-<pre>
-# 
-# $Id: README.md 145 2016-04-18 01:10:29Z aokada $
-# $Rev: 145 $
-# 
-
-###########
-# post analysis
-[igv]
-enable = True
-capture_max = 100
-capture_width = 200
-
-[bam]
-enable = True
-pickup_width = 800
-input_bam_suffix = .markdup.bam
-output_bam_suffix = .markdup.pickup.bam
-
-# result files's specification
-
-[result_format_mutation]
-sept = \t
-header = True
-suffix = .genomon_mutation.result.txt
-suffix_filt = .genomon_mutation.result.filt.txt
-comment = #
-
-col_chr1 = Chr
-col_start = Start
-col_chr2 = Chr
-col_end = End
-
-[result_format_sv]
-sept = \t
-header = True
-suffix = .genomonSV.result.txt
-suffix_filt = .genomonSV.result.filt.txt
-comment = #
-
-col_chr1 = Chr_1
-col_start = Pos_1
-col_chr2 = Chr_2
-col_end = Pos_2
-
-[result_format_qc]
-sept = \t
-header = True
-suffix = .genomonQC.result.txt
-comment = #
-
-[merge_format_mutation]
-lack_column_complement = NA
-include_unfilt = True
-include_unpair = True
-include_unpanel = True
-all_in_one = True
-separate = True
-output_all   = merge_mutation.csv
-output_case1 = merge_mutation_pair_controlpanel.csv
-output_case2 = merge_mutation_pair.csv
-output_case3 = merge_mutation_unpair_controlpanel.csv
-output_case4 = merge_mutation_unpair.csv
-output_filt_all = merge_mutation_filt.csv
-output_filt_case1 = merge_mutation_filt_pair_controlpanel.csv
-output_filt_case2 = merge_mutation_filt_pair.csv
-output_filt_case3 = merge_mutation_filt_unpair_controlpanel.csv
-output_filt_case4 = merge_mutation_filt_unpair.csv
-
-[merge_format_sv]
-lack_column_complement = NA
-include_unfilt = True
-include_unpair = True
-include_unpanel = True
-all_in_one = True
-separate = True
-output_all   = merge_sv.csv
-output_case1 = merge_sv_pair_controlpanel.csv
-output_case2 = merge_sv_pair.csv
-output_case3 = merge_sv_unpair_controlpanel.csv
-output_case4 = merge_sv_unpair.csv
-output_filt_all   = merge_sv_filt.csv
-output_filt_case1 = merge_sv_filt_pair_controlpanel.csv
-output_filt_case2 = merge_sv_filt_pair.csv
-output_filt_case3 = merge_sv_filt_unpair_controlpanel.csv
-output_filt_case4 = merge_sv_filt_unpair.csv
-
-[merge_format_qc]
-lack_column_complement = NA
-include_unfilt = True
-all_in_one = True
-separate = False
-output_all = merge_qc.csv
-
-###########
-# Stand Alone
-
-## Invalid in the case called from Genomon
-[tools]
-samtools  = /home/w3varann/tools/samtools-1.2/samtools
-bedtools  = /home/w3varann/tools/bedtools-2.17.0/bin/bedtools
-</pre>
-
+See document LICENSE.
