@@ -103,6 +103,14 @@ def get_section(mode):
     elif mode.lower() == "qc":
         section_in = "result_format_qc"
         section_out = "merge_format_qc"
+
+    elif mode.lower() == "fusion":
+        section_in = "result_format_fusionfusion"
+        section_out = "merge_format_fusionfusion"
+    
+    elif mode.lower() == "starqc":
+        section_in = "result_format_starqc"
+        section_out = "merge_format_starqc"
         
     return [section_in, section_out]    
     

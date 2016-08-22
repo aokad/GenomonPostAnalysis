@@ -31,12 +31,12 @@ def merge_mutaion_for_paplot(files, ids, output_file, config, extract = False):
             continue 
         
     if len(files) == 0:
-        return {}
+        return
         
     option = subcode_merge._load_option(mode, config)
     if option["header"] == False:
         print ("[ERROR] header is necessary for this function.")
-        return {}
+        return
         
     meta_text = subcode_merge._merge_metadata(files, option)
 
@@ -139,7 +139,52 @@ def merge_mutaion_for_paplot(files, ids, output_file, config, extract = False):
         
     f.close()
     os.rename(output_file + ".tmp", output_file)
-    return positions
+
+def merge_star_qc_for_paplot(files, ids, output_file, config, extract = False):
+    
+    def formatt (input_path):
+    
+        header = []
+        value = []
+        
+        for line in open(input_path):
+            cells = line.rstrip().split("|")
+            if len(cells) < 2:
+                continue
+            
+            header.append(cells[0].strip(" ").rstrip(" "))
+            value.append(cells[1].strip().replace("%", ""))
+        
+        return {"header": "\t".join(header), "value": "\t".join(value)}
+    
+    import os
+
+    for file_path in files:
+        if os.path.exists(file_path) == False:
+            print ("[ERROR] file is not exist. %s" % file_path)
+            files.remove(file_path)
+            continue 
+        
+    if len(files) == 0:
+        return
+       
+    # write meta-data to file
+    option = subcode_merge._load_option("starqc", config)
+    meta_text = subcode_merge._merge_metadata(files, option)
+    
+    f = open(output_file + ".tmp", mode = "w")
+    if len(meta_text) > 0:
+        f.write(meta_text + "\n")
+    
+    for idx in range(len(files)):
+        data = formatt(files[idx])
+        if (idx == 0):
+            f.write("id\t" + data["header"] + "\n")
+            
+        f.write(ids[idx] + "\t" + data["value"] + "\n")
+        
+    f.close()
+    os.rename(output_file + ".tmp", output_file)
     
 if __name__ == "__main__":
    pass

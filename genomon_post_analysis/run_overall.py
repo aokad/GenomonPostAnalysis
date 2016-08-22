@@ -20,9 +20,7 @@ def arg_to_file(mode, genomon_root, args, config):
             
         if len(inputs) == 0:
             return []
-        
-        "--input_file 'sample1_t,sample2_t;sample1_n,sample2_n'"
-    
+
         f = inputs.lstrip("'").lstrip('"').rstrip("'").rstrip('"').split(";")
         
         li = []
@@ -171,7 +169,7 @@ def call_merge_result(mode, ids_dict, output_dir, genomon_root, config):
     
     print "=== [%s] merge result file. ===" % mode
     
-    import os 
+    #import os 
     import genomon_post_analysis.subcode.merge as subcode_merge
     import merge
     
@@ -188,7 +186,8 @@ def call_merge_result(mode, ids_dict, output_dir, genomon_root, config):
         # unfilterd
         output_name = tools.config_getstr(config, section_out, "output_" + key)
 
-        if output_name != "" and os.path.exists(output_dir + "/" + output_name) == False:
+        #if output_name != "" and os.path.exists(output_dir + "/" + output_name) == False:
+        if output_name != "":
             if merge_unfilt == True:
                 files = []
                 for iid in ids_dict[key]:
@@ -196,18 +195,24 @@ def call_merge_result(mode, ids_dict, output_dir, genomon_root, config):
 
                 if mode == "mutation":
                     merge.merge_mutaion_for_paplot(files, ids_dict[key], output_dir + "/" + output_name, config)
+                elif mode == "starqc":
+                    merge.merge_star_qc_for_paplot(files, ids_dict[key], output_dir + "/" + output_name, config)
                 else:
                     subcode_merge.merge_result(files, ids_dict[key], output_dir + "/" + output_name, mode, config)
     
         # filterd
         output_name = tools.config_getstr(config, section_out, "output_filt_" + key)
-        if output_name != "" and os.path.exists(output_dir + "/" + output_name) == False:
+        
+        #if output_name != "" and os.path.exists(output_dir + "/" + output_name) == False:
+        if output_name != "":
             files = []
             for iid in ids_dict[key]:
                 files.append(capture.sample_to_result_file(iid, mode, genomon_root, suffix_f))
             
             if mode == "mutation":
                 merge.merge_mutaion_for_paplot(files, ids_dict[key], output_dir + "/" + output_name, config)
+            elif mode == "starqc":
+                    merge.merge_star_qc_for_paplot(files, ids_dict[key], output_dir + "/" + output_name, config)
             else:
                 subcode_merge.merge_result(files, ids_dict[key], output_dir + "/" + output_name, mode, config)
     
@@ -219,7 +224,7 @@ def main(argv):
     parser = argparse.ArgumentParser(prog = prog)
 
     parser.add_argument("--version", action = "version", version = tools.version_text())
-    parser.add_argument('mode', choices=['mutation', 'sv', 'qc', 'all'], help = "analysis type")
+    parser.add_argument('mode', choices=['all', 'mutation', 'sv', 'qc', 'fusion', 'starqc'], help = "analysis type")
     parser.add_argument("output_dir", help = "output file path", type = str)
     parser.add_argument("genomon_root", help = "Genomon root path", type = str)
     parser.add_argument("sample_sheet", help = "sample file of Genomon", type = str)
@@ -277,6 +282,10 @@ def main(argv):
             
         if args.mode == "qc":
             call_merge_result(args.mode, sample_dic, output_dir, genomon_root,  config)
+        elif args.mode == "fusion":
+            call_merge_result(args.mode, sample_dic, output_dir, genomon_root,  config)
+        elif args.mode == "starqc":
+            call_merge_result(args.mode, sample_dic, output_dir, genomon_root,  config)        
         else:
             if tools.config_getboolean(config, "igv", "enable") == True:
                 call_image_capture(args.mode,  sample_dic, output_dir, genomon_root, sample_conf, config)

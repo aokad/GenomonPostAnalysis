@@ -41,6 +41,12 @@ def sample_to_pair(sample, mode, tumor):
     return None
     
 def sample_to_result_file(sample_name, mode, genomon_root, suffix):
+    if mode == "fusion":
+        return genomon_root + "/" + mode + "/" + sample_name + "/" + suffix
+    
+    if mode == "starqc":
+        return genomon_root + "/star/" + sample_name + "/" + sample_name + suffix
+        
     return genomon_root + "/" + mode + "/" + sample_name + "/" + sample_name + suffix
 
 def sample_to_bam_file(sample_name, mode, genomon_root, suffix):
