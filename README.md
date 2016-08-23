@@ -49,7 +49,7 @@ usage: genomon_pa run [-h] [--version] [--config_file CONFIG_FILE]
                       {all,mutation,sv,qc,fusion,starqc} output_dir genomon_root
 
 ```
- - `{mutation,sv,qc,all}`
+ - `{all,mutation,sv,qc,fusion,starqc}`
 
     実行モード
     
