@@ -54,12 +54,92 @@ def sample_to_bam_file(sample_name, mode, genomon_root, suffix):
 
 # for stand alone    
 def sample_to_list(sample, mode, genomon_root, config):
-
-    import genomon_post_analysis.subcode.tools as tools
     
+    def set_sample_4type(li, mode, config):
+        # tumor, normal, control-panel
+        import genomon_post_analysis.subcode.tools as tools
+
+        tmr_nrml_list = []
+        tmr_nrml_none = []
+        tmr_none_list = []
+        tmr_none_none = []
+    
+        [section_in, section_out] = tools.get_section(mode)
+        unpair = tools.config_getboolean(config, section_out, "include_unpair")
+        unpanel = tools.config_getboolean(config, section_out, "include_unpanel")
+        
+        for item in li:
+            if item[1]== None:  # pair
+                if unpair == True:
+                    if item[2] == None: # control-panel
+                        if unpanel == True: tmr_none_none.append(item[0])
+                    else:
+                        tmr_none_list.append(item[0])
+            else:
+                if item[2] == None:
+                    if unpanel == True: tmr_nrml_none.append(item[0])
+                else:
+                    tmr_nrml_list.append(item[0])
+        
+        sample_dict = {"all":[], "case1":[], "case2":[], "case3":[], "case4":[]}
+        
+        if tools.config_getboolean(config, section_out, "all_in_one") == True:
+            al = []
+            al.extend(tmr_nrml_list)
+            al.extend(tmr_nrml_none)
+            al.extend(tmr_none_list)
+            al.extend(tmr_none_none)
+            sample_dict["all"] = al
+        
+        if tools.config_getboolean(config, section_out, "separate") == True:
+            sample_dict["case1"] = tmr_nrml_list
+            sample_dict["case2"] = tmr_nrml_none
+            sample_dict["case3"] = tmr_none_list
+            sample_dict["case4"] = tmr_none_none
+            
+        return sample_dict
+    
+    
+    def set_sample_2type(li, mode, config):
+        # tumor, control-panel
+        import genomon_post_analysis.subcode.tools as tools
+        
+        tmr_list = []
+        tmr_none = []
+    
+        [section_in, section_out] = tools.get_section(mode)
+        unpanel = tools.config_getboolean(config, section_out, "include_unpanel")
+        
+        for item in li:
+            if item[1]== None:  # control-panel
+                if unpanel == True: tmr_none.append(item[0])
+            else:
+                tmr_list.append(item[0])
+        
+        sample_dict = {"all":[], "case1":[], "case2":[], "case3":[], "case4":[]}
+        
+        if tools.config_getboolean(config, section_out, "all_in_one") == True:
+            al = []
+            al.extend(tmr_list)
+            al.extend(tmr_none)
+            sample_dict["all"] = al
+        
+        if tools.config_getboolean(config, section_out, "separate") == True:
+            sample_dict["case1"] = tmr_list
+            sample_dict["case2"] = tmr_none
+            
+        return sample_dict
+        
+    if mode == "mutation":
+        return set_sample_4type(sample.mutation_call, mode, config)
+    elif mode == "sv":
+        return set_sample_4type(sample.sv_detection, mode, config)
+    elif mode == "fusion":
+        return set_sample_2type(sample.fusionfusion, mode, config)
+        
     sample_dict = {"all":[], "case1":[], "case2":[], "case3":[], "case4":[]}
     
-    if mode == "qc":
+    if mode == "qc" or mode == "starqc":
         items = []
         for item in sample.qc:
             items.append(item)
@@ -67,49 +147,6 @@ def sample_to_list(sample, mode, genomon_root, config):
         sample_dict["all"] = items
         return sample_dict
     
-    if mode == "mutation":
-        li = sample.mutation_call
-    elif mode == "sv":
-        li = sample.sv_detection
-    else:
-        return sample_dict
-        
-    tmr_nrml_list = []
-    tmr_nrml_none = []
-    tmr_none_list = []
-    tmr_none_none = []
-
-    [section_in, section_out] = tools.get_section(mode)
-    unpair = tools.config_getboolean(config, section_out, "include_unpair")
-    unpanel = tools.config_getboolean(config, section_out, "include_unpanel")
-    
-    for item in li:
-        if item[1]== None:
-            if unpair == True:
-                if item[2] == None:
-                    if unpanel == True: tmr_none_none.append(item[0])
-                else:
-                    tmr_none_list.append(item[0])
-        else:
-            if item[2] == None:
-                if unpanel == True: tmr_nrml_none.append(item[0])
-            else:
-                tmr_nrml_list.append(item[0])
-    
-    if tools.config_getboolean(config, section_out, "all_in_one") == True:
-        al = []
-        al.extend(tmr_nrml_list)
-        al.extend(tmr_nrml_none)
-        al.extend(tmr_none_list)
-        al.extend(tmr_none_none)
-        sample_dict["all"] = al
-    
-    if tools.config_getboolean(config, section_out, "separate") == True:
-        sample_dict["case1"] = tmr_nrml_list
-        sample_dict["case2"] = tmr_nrml_none
-        sample_dict["case3"] = tmr_none_list
-        sample_dict["case4"] = tmr_none_none
-        
     return sample_dict
     
 def write_capture_bat(path_options, ID, sample_conf, mode, config):

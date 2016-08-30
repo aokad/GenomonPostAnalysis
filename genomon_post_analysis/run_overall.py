@@ -212,11 +212,11 @@ def call_merge_result(mode, ids_dict, output_dir, genomon_root, config):
             if mode == "mutation":
                 merge.merge_mutaion_for_paplot(files, ids_dict[key], output_dir + "/" + output_name, config)
             elif mode == "starqc":
-                    merge.merge_star_qc_for_paplot(files, ids_dict[key], output_dir + "/" + output_name, config)
+                merge.merge_star_qc_for_paplot(files, ids_dict[key], output_dir + "/" + output_name, config)
             else:
                 subcode_merge.merge_result(files, ids_dict[key], output_dir + "/" + output_name, mode, config)
     
-def main(argv):
+def main(mode, argv):
 
     import os
     import argparse
@@ -224,7 +224,7 @@ def main(argv):
     parser = argparse.ArgumentParser(prog = prog)
 
     parser.add_argument("--version", action = "version", version = tools.version_text())
-    parser.add_argument('mode', choices=['all', 'mutation', 'sv', 'qc', 'fusion', 'starqc'], help = "analysis type")
+    parser.add_argument('mode', choices=['dna', 'rna', 'mutation', 'sv', 'qc', 'fusion', 'starqc'], help = "analysis type")
     parser.add_argument("output_dir", help = "output file path", type = str)
     parser.add_argument("genomon_root", help = "Genomon root path", type = str)
     parser.add_argument("sample_sheet", help = "sample file of Genomon", type = str)
@@ -256,23 +256,31 @@ def main(argv):
         
     # call functions
     if args.mode == "all":
-        sample_dic = capture.sample_to_list(sample_conf, "sv", genomon_root, config)
-        if tools.config_getboolean(config, "igv", "enable") == True:
-            call_image_capture("sv", sample_dic, output_dir, genomon_root, sample_conf, config)
-        if tools.config_getboolean(config, "bam", "enable") == True:
-            call_bam_pickup("sv", sample_dic, output_dir, genomon_root, args.samtools, args.bedtools, sample_conf, config)
-        call_merge_result("sv", sample_dic, output_dir, genomon_root, config)
+        if mode == "dna":
+            sample_dic = capture.sample_to_list(sample_conf, "sv", genomon_root, config)
+            if tools.config_getboolean(config, "igv", "enable") == True:
+                call_image_capture("sv", sample_dic, output_dir, genomon_root, sample_conf, config)
+            if tools.config_getboolean(config, "bam", "enable") == True:
+                call_bam_pickup("sv", sample_dic, output_dir, genomon_root, args.samtools, args.bedtools, sample_conf, config)
+            call_merge_result("sv", sample_dic, output_dir, genomon_root, config)
+            
+            sample_dic = capture.sample_to_list(sample_conf, "mutation", genomon_root, config)
+            if tools.config_getboolean(config, "igv", "enable") == True:
+                call_image_capture("mutation", sample_dic, output_dir, genomon_root, sample_conf, config)
+            if tools.config_getboolean(config, "bam", "enable") == True:
+                call_bam_pickup("mutation", sample_dic, output_dir, genomon_root, args.samtools, args.bedtools, sample_conf, config)
+            call_merge_result("mutation", sample_dic, output_dir, genomon_root, config)
+            
+            sample_dic = capture.sample_to_list(sample_conf, "qc", genomon_root, config)
+            call_merge_result("qc", sample_dic, output_dir, genomon_root,  config)
+    
+        elif mode == "rna":
+            sample_dic = capture.sample_to_list(sample_conf, "fusionfusion", genomon_root, config)
+            call_merge_result("fusion", sample_dic, output_dir, genomon_root,  config)
+    
+            sample_dic = capture.sample_to_list(sample_conf, "qc", genomon_root, config)
+            call_merge_result("starqc", sample_dic, output_dir, genomon_root,  config)
         
-        sample_dic = capture.sample_to_list(sample_conf, "mutation", genomon_root, config)
-        if tools.config_getboolean(config, "igv", "enable") == True:
-            call_image_capture("mutation", sample_dic, output_dir, genomon_root, sample_conf, config)
-        if tools.config_getboolean(config, "bam", "enable") == True:
-            call_bam_pickup("mutation", sample_dic, output_dir, genomon_root, args.samtools, args.bedtools, sample_conf, config)
-        call_merge_result("mutation", sample_dic, output_dir, genomon_root, config)
-        
-        sample_dic = capture.sample_to_list(sample_conf, "qc", genomon_root, config)
-        call_merge_result("qc", sample_dic, output_dir, genomon_root,  config)
-
     else:
         sample_dic = arg_to_file(args.mode, genomon_root, args, config)
         num = 0

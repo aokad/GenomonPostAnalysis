@@ -35,7 +35,7 @@ python setup.py build install --user
 ```
 cd {working dir}
 
-genomon_pa run all {output_dir} {genomon_root}
+genomon_pa dna all {output_dir} {genomon_root}
 ```
 
 <br>
@@ -44,16 +44,28 @@ genomon_pa run all {output_dir} {genomon_root}
 オプション解説
 
 ```
-$ genomon_pa run
-usage: genomon_pa run [-h] [--version] [--config_file CONFIG_FILE]
-                      {all,mutation,sv,qc,fusion,starqc} output_dir genomon_root
+$ genomon_pa dna
+usage: genomon_pa dna [-h] [--version] [--config_file CONFIG_FILE]
+                      {all,mutation,sv,qc} output_dir genomon_root
+
+$ genomon_pa rna
+usage: genomon_pa rna [-h] [--version] [--config_file CONFIG_FILE]
+                      {all,fusion,starqc} output_dir genomon_root
 
 ```
+
+ - `{dna,rna}`
+
+    sub コマンド
+    
+    - dna: DNA解析結果
+    - rna: RNA解析結果
+    
  - `{all,mutation,sv,qc,fusion,starqc}`
 
     実行モード
     
-    - all: すべて
+    - all: (DNA) mutation,sv,qc をまとめて実行, (RNA) fusion,starqc をまとめて実行
     - mutation / sv / qc: (DNA) 各結果のみ
     - fusion / starqc: (RNA) 各結果のみ
 
