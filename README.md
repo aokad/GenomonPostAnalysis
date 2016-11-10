@@ -4,20 +4,20 @@ Genomonが作成した結果ファイルから以下を作成します。
 
  - IGV captureスクリプトを作成 <font color="red">※</font>
  - 検出された変異の周りだけbamを抽出するスクリプトを作成 <font color="red">※</font>
- - サンプルごとのresult.txtを縦に連結
+ - サンプルごとのresult.txtを連結
  
  <font color="red">※ 手動で実行してください。</font>
  
 -------------------------------------------------------------------------
 
-##Dependency
+## Dependency
 
  - python >= 2.7
  - Genomon >= 2.0.3
 
 -------------------------------------------------------------------------
 
-##Install
+## Install
 
 ```
 git clone https://github.com/aokad/GenomonPostAnalysis.git
@@ -28,56 +28,59 @@ python setup.py build install --user
 
 -------------------------------------------------------------------------
 
-##Run
-
-### (1) all-in-one
+## Run
 
 ```
 cd {working dir}
 
-genomon_pa dna all {output_dir} {genomon_root}
+# dna
+genomon_pa dna {output_dir} {genomon_root} {genomon_sample_sheet}
+
+# rna
+genomon_pa rna {output_dir} {genomon_root} {genomon_sample_sheet}
 ```
 
-<br>
-<br>
-
-オプション解説
+## コマンド解説
 
 ```
-$ genomon_pa dna
-usage: genomon_pa dna [-h] [--version] [--config_file CONFIG_FILE]
-                      {all,mutation,sv,qc} output_dir genomon_root
+$ genomon_pa --help
+usage: genomon_pa [-h] [--version] [--config_file CONFIG_FILE]
+                  [--input_file_case1 INPUT_FILE_CASE1]
+                  [--input_file_case2 INPUT_FILE_CASE2]
+                  [--input_file_case3 INPUT_FILE_CASE3]
+                  [--input_file_case4 INPUT_FILE_CASE4]
+                  [--samtools SAMTOOLS]
+                  [--bedtools BEDTOOLS]
+                  {dna,rna,mutation,sv,qc,fusion,starqc}
+                  output_dir
+                  genomon_root
+                  sample_sheet
 
-$ genomon_pa rna
-usage: genomon_pa rna [-h] [--version] [--config_file CONFIG_FILE]
-                      {all,fusion,starqc} output_dir genomon_root
+positional arguments:
+  {dna,rna,mutation,sv,qc,fusion,starqc}
+                        analysis type 欄外参照
+  output_dir            path to output-dir  ※ディレクトリ構成は 実行結果のディレクトリ 参照
+  genomon_root          path to Genomon-working-root
+  sample_sheet          path to Genomon-samplesheet.csv
 
+optional arguments:   欄外参照
+  --input_file_case1 INPUT_FILE_CASE1  sample IDs case1(pair and controlpanel), comma delimited.
+  --input_file_case2 INPUT_FILE_CASE2  sample IDs case2(pair and not controlpanel), comma delimited.
+  --input_file_case3 INPUT_FILE_CASE3  sample IDs case3(unpair and controlpanel), comma delimited.
+  --input_file_case4 INPUT_FILE_CASE4  sample IDs case4(unpair and not controlpanel), comma delimited.
+  --config_file CONFIG_FILE            config file
+  --samtools SAMTOOLS                  path to samtools
+  --bedtools BEDTOOLS                  path to bedtools
+  -h, --help                           show this help message and exit
+  --version                            show programs version number and exit
 ```
 
- - `{dna,rna}`
+sub コマンド
 
-    sub コマンド
-    
-    - dna: DNA解析結果
-    - rna: RNA解析結果
-    
- - `{all,mutation,sv,qc,fusion,starqc}`
-
-    実行モード
-    
-    - all: (DNA) mutation,sv,qc をまとめて実行, (RNA) fusion,starqc をまとめて実行
-    - mutation / sv / qc: (DNA) 各結果のみ
-    - fusion / starqc: (RNA) 各結果のみ
-
-<br>
-
- - `output_dir`
-
-    出力ディレクトリ
-    
-    ディレクトリ構成は (2) 実行結果のディレクトリ 参照
-
-<br>
+ - dna: DNA解析結果(mutation, sv, qc) をまとめて実行
+ - rna: RNA解析結果(fusion, starqc) をまとめて実行
+ - mutation / sv / qc: (DNA) 各結果のみ
+ - fusion / starqc: (RNA) 各結果のみ
 
  - `--config_file` 
 
@@ -87,22 +90,39 @@ usage: genomon_pa rna [-h] [--version] [--config_file CONFIG_FILE]
 
     ※このファイルを編集しても変更は反映されません。--config_file オプションで変更したファイルを渡してください。
 
+ - `--input_file_case1`
+
+    各caseのサンプルID（,区切り）
+    
+    Genomonからの呼び出し用。未設定時はsample_sheetから自動判定します。
+    
+    - case1...pairあり, controlpanelあり
+    - case2...pairあり, controlpanelなし
+    - case3...pairなし, controlpanelなし
+    - case4...pairなし, controlpanelあり
+    
+
+ - `--samtools` / `--bedtools`
+
+    Genomonからの呼び出し用。未設定時はconfig_fileのパス([tools])を使用します。
+
+
 <br>
 <br>
 
 
-### (2) 実行結果のディレクトリ
+## Directory structure
 
 実行後、以下の場所にスクリプトが2つ作成されますので、それぞれ実行してください。
 
-実行するときのカレントディレクトリはどこでもいいです。アクセス権限さえあれば。
+実行するときのカレントディレクトリはアクセス権限さえあればどこでもいいです。
 
 <pre>
 {output_dir}
 │
-├── merge.mutation.csv         <====== 各結果ファイルを結合したもの
-├── merge.qc.csv
-├── merge.sv.csv
+├── merge.mutation.txt         <====== 各結果ファイルを結合したもの
+├── merge.qc.txt
+├── merge.sv.txt
 │
 ├── mutation                   <====== svと同じ構成なので省略
        (省略)

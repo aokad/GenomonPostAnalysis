@@ -3,14 +3,13 @@
 Created on Wed Dec 02 17:43:52 2015
 
 @author: okada
-
-$Id: capture.py 143 2016-04-15 02:28:10Z aokada $
-$Rev: 143 $
 """
+
+import os
+import genomon_post_analysis.subcode.tools as tools
 
 def load_sample_conf(f, check):
     import sample_conf
-    import os
     
     if os.path.exists(f) == False:
         print ("sample_sheet is none: %s" % (f))
@@ -41,9 +40,7 @@ def sample_to_pair(sample, mode, tumor):
     return None
     
 def sample_to_result_file(sample_name, mode, genomon_root, suffix):
-    #if mode == "fusion":
-    #    return genomon_root + "/" + mode + "/" + sample_name + "/" + suffix
-    
+
     if mode == "starqc":
         return genomon_root + "/star/" + sample_name + "/" + sample_name + suffix
         
@@ -52,103 +49,6 @@ def sample_to_result_file(sample_name, mode, genomon_root, suffix):
 def sample_to_bam_file(sample_name, mode, genomon_root, suffix):
     return genomon_root + "/bam/" + sample_name + "/" + sample_name + suffix
 
-# for stand alone    
-def sample_to_list(sample, mode, genomon_root, config):
-    
-    def set_sample_4type(li, mode, config):
-        # tumor, normal, control-panel
-        import genomon_post_analysis.subcode.tools as tools
-
-        tmr_nrml_list = []
-        tmr_nrml_none = []
-        tmr_none_list = []
-        tmr_none_none = []
-    
-        [section_in, section_out] = tools.get_section(mode)
-        unpair = tools.config_getboolean(config, section_out, "include_unpair")
-        unpanel = tools.config_getboolean(config, section_out, "include_unpanel")
-        
-        for item in li:
-            if item[1]== None:  # pair
-                if unpair == True:
-                    if item[2] == None: # control-panel
-                        if unpanel == True: tmr_none_none.append(item[0])
-                    else:
-                        tmr_none_list.append(item[0])
-            else:
-                if item[2] == None:
-                    if unpanel == True: tmr_nrml_none.append(item[0])
-                else:
-                    tmr_nrml_list.append(item[0])
-        
-        sample_dict = {"all":[], "case1":[], "case2":[], "case3":[], "case4":[]}
-        
-        if tools.config_getboolean(config, section_out, "all_in_one") == True:
-            al = []
-            al.extend(tmr_nrml_list)
-            al.extend(tmr_nrml_none)
-            al.extend(tmr_none_list)
-            al.extend(tmr_none_none)
-            sample_dict["all"] = al
-        
-        if tools.config_getboolean(config, section_out, "separate") == True:
-            sample_dict["case1"] = tmr_nrml_list
-            sample_dict["case2"] = tmr_nrml_none
-            sample_dict["case3"] = tmr_none_list
-            sample_dict["case4"] = tmr_none_none
-            
-        return sample_dict
-    
-    
-    def set_sample_2type(li, mode, config):
-        # tumor, control-panel
-        import genomon_post_analysis.subcode.tools as tools
-        
-        tmr_list = []
-        tmr_none = []
-    
-        [section_in, section_out] = tools.get_section(mode)
-        unpanel = tools.config_getboolean(config, section_out, "include_unpanel")
-        
-        for item in li:
-            if item[1]== None:  # control-panel
-                if unpanel == True: tmr_none.append(item[0])
-            else:
-                tmr_list.append(item[0])
-        
-        sample_dict = {"all":[], "case1":[], "case2":[], "case3":[], "case4":[]}
-        
-        if tools.config_getboolean(config, section_out, "all_in_one") == True:
-            al = []
-            al.extend(tmr_list)
-            al.extend(tmr_none)
-            sample_dict["all"] = al
-        
-        if tools.config_getboolean(config, section_out, "separate") == True:
-            sample_dict["case1"] = tmr_list
-            sample_dict["case2"] = tmr_none
-            
-        return sample_dict
-        
-    if mode == "mutation":
-        return set_sample_4type(sample.mutation_call, mode, config)
-    elif mode == "sv":
-        return set_sample_4type(sample.sv_detection, mode, config)
-    elif mode == "fusion":
-        return set_sample_2type(sample.fusionfusion, mode, config)
-        
-    sample_dict = {"all":[], "case1":[], "case2":[], "case3":[], "case4":[]}
-    
-    if mode == "qc" or mode == "starqc":
-        items = []
-        for item in sample.qc:
-            items.append(item)
-        
-        sample_dict["all"] = items
-        return sample_dict
-    
-    return sample_dict
-    
 def write_capture_bat(path_options, ID, sample_conf, mode, config):
 
     cmd_header = """
@@ -167,9 +67,6 @@ goto {chr}:{start}-{end}
 snapshot {name}
 """
 
-    import genomon_post_analysis.subcode.tools as tools
-    import os
-    
     [section_in, section_out] = tools.get_section(mode)
     
     # result file
@@ -300,9 +197,6 @@ rm {output_bam}.temp.bam
     cmd_rm_bed = """
 rm {bed}
 """
-
-    import genomon_post_analysis.subcode.tools as tools
-    import os
     
     # options read
     [section_in, section_out] = tools.get_section(mode)
@@ -414,8 +308,6 @@ rm {bed}
         
 def merge_capture_bat(files, output_file, delete_flg):
 
-    import os
-    
     f_out = open(output_file + ".tmp", "w")
     
     for bat_file in files:
@@ -436,8 +328,6 @@ def merge_capture_bat(files, output_file, delete_flg):
             
 def merge_pickup_script(files, output_file):
 
-    import os
-    
     header = """#!/bin/bash
 #
 """

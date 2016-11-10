@@ -1,4 +1,1 @@
-import capture
-import run_overall
-import run_conf
-import sample_conf
+__version__ = '1.3.0'

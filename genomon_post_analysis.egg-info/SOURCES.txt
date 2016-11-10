@@ -5,8 +5,7 @@ setup.py
 genomon_post_analysis/__init__.py
 genomon_post_analysis/capture.py
 genomon_post_analysis/merge.py
-genomon_post_analysis/run_conf.py
-genomon_post_analysis/run_overall.py
+genomon_post_analysis/run.py
 genomon_post_analysis/sample_conf.py
 genomon_post_analysis.egg-info/PKG-INFO
 genomon_post_analysis.egg-info/SOURCES.txt

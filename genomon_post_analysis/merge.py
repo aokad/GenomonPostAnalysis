@@ -3,8 +3,6 @@
 Created on Mon Jun 13 13:34:10 2016
 
 @author: okada
-
-$Id: merge.py $
 """
 
 import genomon_post_analysis.subcode.merge as subcode_merge
@@ -89,7 +87,7 @@ def merge_mutaion_for_paplot(files, ids, output_file, config, extract = False):
         lines = []
         lines_count = 0
         for line in open(file_path):
-            line = line.rstrip()
+            line = line.rstrip('\r\n')
             if len(line.replace(option["sept"], "")) == 0:
                 continue
             
@@ -148,7 +146,7 @@ def merge_star_qc_for_paplot(files, ids, output_file, config, extract = False):
         value = []
         
         for line in open(input_path):
-            cells = line.rstrip().split("|")
+            cells = line.rstrip('\r\n').split("|")
             if len(cells) < 2:
                 continue
             
