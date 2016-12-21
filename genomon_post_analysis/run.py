@@ -9,8 +9,34 @@ import os
 import genomon_post_analysis.subcode.tools as tools
 import capture
 
-def call_image_capture(mode, ids_dict, output_dir, genomon_root, sample_conf, config):
+def image_capture(mode, sample_list, output_dir, genomon_root, sample_conf, config):
+    
+    if (os.path.exists(output_dir + "/capture") == False):
+        os.mkdir(output_dir + "/capture")
+    if (os.path.exists(output_dir + "/capture_script") == False):
+        os.mkdir(output_dir + "/capture_script") 
+        
+    files_capt = []
+    for ID in sample_list:
 
+        f_capt = "%s/capture_script/%s.bat" % (output_dir, ID)
+        
+        path_options = { 
+            "output_file": f_capt,
+            "output_igv_dir": output_dir + "/capture",
+            "bam_dir": "",
+            "genomon_root": genomon_root
+           }
+
+        if capture.write_capture_bat(path_options, ID, sample_conf, mode, config) == True:
+            files_capt.append(f_capt)
+        else:
+            if os.path.exists(f_capt) == True:
+                os.remove(f_capt)
+
+    capture.merge_capture_bat(files_capt, output_dir + "/capture_script/capture.bat", True)
+
+def call_image_capture(mode, ids_dict, output_dir, genomon_root, sample_conf, config):
     print "=== [%s] create script file, for IGV image capture. ===" % mode
 
     def image_capture(mode, sample_list, output_dir, genomon_root, sample_conf, config):
@@ -37,9 +63,9 @@ def call_image_capture(mode, ids_dict, output_dir, genomon_root, sample_conf, co
             else:
                 if os.path.exists(f_capt) == True:
                     os.remove(f_capt)
-    
+
         capture.merge_capture_bat(files_capt, output_dir + "/capture_script/capture.bat", True)
-        
+
     # output dirs
     output_dir = os.path.abspath(output_dir) + "/" + mode
     
@@ -56,7 +82,25 @@ def call_image_capture(mode, ids_dict, output_dir, genomon_root, sample_conf, co
             os.mkdir(output_dir + "/" + dirname)
             
         image_capture(mode, ids_dict[key], output_dir + "/" + dirname, genomon_root, sample_conf, config)
-    
+
+def call_image_capture_merged(mode, merged_file, output_dir, genomon_root, sample_conf, config):
+
+    print "=== [%s] create script file, for IGV image capture. ===" % mode
+
+    if (os.path.exists(output_dir + "/capture") == False):
+        os.mkdir(output_dir + "/capture")
+    if (os.path.exists(output_dir + "/capture_script") == False):
+        os.mkdir(output_dir + "/capture_script") 
+
+    path_options = { 
+        "output_file": "%s/capture_script/capture.bat" % (output_dir),
+        "output_igv_dir": output_dir + "/capture",
+        "bam_dir": "",
+        "genomon_root": genomon_root
+       }
+
+    capture.write_capture_bat_from_merged(path_options, merged_file, sample_conf, mode, config)
+
 def call_bam_pickup(mode, ids_dict, output_dir, genomon_root, arg_samtools, arg_bedtools, sample_conf, config):
 
     print "=== [%s] create script file, for bam pick up. ===" % mode
@@ -324,6 +368,10 @@ def main():
     parser.add_argument("--samtools", help = "path to samtools", type = str, default = "")
     parser.add_argument("--bedtools", help = "path to bedtools", type = str, default = "")
     
+    # for personal call
+    parser.add_argument('--submode', choices=['igv', ''], help = "analysis type", default = "")
+    parser.add_argument("--merged_file", help = "path to merged result file, comma delimited.", type = str, default = "")
+    
     args = parser.parse_args(sys.argv[1:len(sys.argv)])
     
     # dirs
@@ -365,7 +413,10 @@ def main():
 
         sample_dic = get_sample_dic("starqc", genomon_root, args, config, sample_conf)
         call_merge_result("starqc", sample_dic, output_dir, genomon_root,  config)
-        
+    
+    elif args.submode == "igv":
+        call_image_capture_merged(args.mode, args.merged_file, output_dir, genomon_root, sample_conf, config)
+
     else:
         sample_dic = get_sample_dic(args.mode, genomon_root, args, config, sample_conf)
             
@@ -374,7 +425,7 @@ def main():
         elif args.mode == "fusion":
             call_merge_result(args.mode, sample_dic, output_dir, genomon_root,  config)
         elif args.mode == "starqc":
-            call_merge_result(args.mode, sample_dic, output_dir, genomon_root,  config)        
+            call_merge_result(args.mode, sample_dic, output_dir, genomon_root,  config)
         else:
             if tools.config_getboolean(config, "igv", "enable") == True:
                 call_image_capture(args.mode,  sample_dic, output_dir, genomon_root, sample_conf, config)
