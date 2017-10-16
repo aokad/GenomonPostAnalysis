@@ -1,10 +1,6 @@
 [![Build Status](https://travis-ci.org/aokad/GenomonPostAnalysis.svg?branch=master)](https://travis-ci.org/aokad/GenomonPostAnalysis)
 [![Code Health](https://landscape.io/github/aokad/GenomonPostAnalysis/master/landscape.svg?style=flat)](https://landscape.io/github/aokad/GenomonPostAnalysis/master)
-
-<!-- 
-[![PyPI version](https://badge.fury.io/py/xxx.svg)](http://badge.fury.io/py/xxx)
--->
-
+<!-- [![PyPI version](https://badge.fury.io/py/xxx.svg)](http://badge.fury.io/py/xxx)-->
 [![License](https://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg?style=flat)](http://genomon.readthedocs.org)
 
