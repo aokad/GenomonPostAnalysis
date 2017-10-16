@@ -2,6 +2,9 @@ language: python
 python:
   - "2.7"
 
+istall:
+  - python setup.py build install
+
 notifications:
   emails:
     - aiokada@hgc.jp
