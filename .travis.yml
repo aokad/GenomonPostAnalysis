@@ -2,15 +2,15 @@ language: python
 python:
   - "2.7.10"
 
-# before_install:
+before_install:
 #   - command1
 #   - command2
 # 
-# before_script:
+before_script:
 #   - php composer.phar install
 #   - php app/console xxxx
 # 
-# script:
+script:
 #   - phpunit -c app
 #   - phantomjs xxxx/run-jasmine.js xxxx/test.html
 
