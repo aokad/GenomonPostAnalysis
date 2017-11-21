@@ -5,6 +5,7 @@ python:
 script:
   - python setup.py build install
   - genomon_pa --version
+  - pwd
 
 notifications:
   emails:
