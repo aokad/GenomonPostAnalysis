@@ -4,6 +4,7 @@ python:
 
 script:
   - python setup.py build install
+  - genomon_pa --version
 
 notifications:
   emails:
