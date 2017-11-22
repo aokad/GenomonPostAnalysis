@@ -18,17 +18,21 @@ Genomonが作成した結果ファイルから以下を作成します。
 
 ## Dependency
 
- - python >= 2.7
- - Genomon >= 2.0.3
-
+ - python = 2.7
+ - GenomonPipeline (Install参照)
+ 
 -------------------------------------------------------------------------
 
 ## Install
 
-```
-git clone https://github.com/aokad/GenomonPostAnalysis.git
-cd GenomonPostAnalysis
+GenomonPipelineのバージョンごとに適応するバージョンが異なります。
 
+[リリース](https://github.com/aokad/GenomonPostAnalysis/releases) のページより対応するバージョンをダウンロードしてご使用ください。
+
+```
+wget https://github.com/aokad/GenomonPostAnalysis/archive/v1.4.1.zip
+unzip v1.4.1.zip
+cd GenomonPostAnalysis
 python setup.py build install --user
 ```
 
