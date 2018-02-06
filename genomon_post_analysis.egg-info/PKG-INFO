@@ -1,11 +1,12 @@
 Metadata-Version: 1.0
 Name: genomon-post-analysis
-Version: 1.3.0release
+Version: 1.4.0.cloudrelease
 Summary: parser result files created by genomon
 Home-page: https://github.com/Genomon-Project/Genomon.git
 Author: ai okada
 Author-email: genomon_team@gamil.com
 License: License of GenomonPipeline
+Description-Content-Type: UNKNOWN
 Description: 
         
         parser result files created by genomon (SV, mutaion-call and so on)

@@ -89,28 +89,28 @@ def get_section(mode):
     section_out = ""
     
     if mode.lower() == "sv":
-        section_in = "result_format_sv"
-        section_out = "merge_format_sv"
+        section_in = "input_sv"
+        section_out = "merge_sv"
         
     elif mode.lower() == "mutation":
-        section_in = "result_format_mutation"
-        section_out = "merge_format_mutation"
+        section_in = "input_mutation"
+        section_out = "merge_mutation"
     
     elif mode.lower() == "summary":
-        section_in = "result_format_qc"
-        section_out = "merge_format_qc"
+        section_in = "input_qc"
+        section_out = "merge_qc"
 
     elif mode.lower() == "qc":
-        section_in = "result_format_qc"
-        section_out = "merge_format_qc"
+        section_in = "input_qc"
+        section_out = "merge_qc"
 
     elif mode.lower() == "fusion":
-        section_in = "result_format_fusionfusion"
-        section_out = "merge_format_fusionfusion"
+        section_in = "input_fusionfusion"
+        section_out = "merge_fusionfusion"
     
     elif mode.lower() == "starqc":
-        section_in = "result_format_starqc"
-        section_out = "merge_format_starqc"
+        section_in = "input_starqc"
+        section_out = "merge_starqc"
         
     return [section_in, section_out]    
     

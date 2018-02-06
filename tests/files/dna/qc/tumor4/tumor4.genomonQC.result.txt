@@ -1,0 +1,5 @@
+# Version: genomon_pipeline-2.5.3
+# Analysis Date: 2017-12-25 08:42:37
+# User: root
+bam_filename	sample	platform	platform_unit	library	readgroup	read_length_r1	read_length_r2	#_mapped_bases	#_mapped_bases_r1	#_mapped_bases_r2	#_divergent_bases	#_divergent_bases_r1	#_divergent_bases_r2	#_total_reads	#_total_reads_r1	#_total_reads_r2	#_mapped_reads	#_mapped_reads_r1	#_mapped_reads_r2	#_mapped_reads_properly_paired	#_gc_bases_r1	#_gc_bases_r2	mean_insert_size	insert_size_sd	median_insert_size	#_duplicate_reads	total_depth	bait_size	average_depth	depth_stdev	2x_ratio	10x_ratio	20x_ratio	30x_ratio	40x_ratio	50x_ratio	100x_ratio	2x	10x	20x	30x	40x	50x	100x
+tumor.markdup.bam	anon	.	.	anon	.	100	100	11285030	5642614	5642416	90145	44855	45290	112438	56219	56219	112438	56219	56219	52676	2584531	2586350	250.521	11.891	250.000	356	1101872	33805487	0.0325944720157	1.26282557524	0.000701572499163	0.000701572499163	0.000701572499163	0.000681605326378	0.000486518653022	0.000260253609126	0.0	23717	23717	23717	23042	16447	8798	0

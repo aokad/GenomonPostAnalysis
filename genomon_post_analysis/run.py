@@ -101,7 +101,7 @@ def call_image_capture_merged(mode, merged_file, output_dir, genomon_root, sampl
 
     capture.write_capture_bat_from_merged(path_options, merged_file, sample_conf, mode, config)
 
-def call_bam_pickup(mode, ids_dict, output_dir, genomon_root, arg_samtools, arg_bedtools, sample_conf, config):
+def call_bam_pickup(mode, ids_dict, output_dir, genomon_root, sample_conf, config):
 
     print "=== [%s] create script file, for bam pick up. ===" % mode
     
@@ -145,13 +145,8 @@ def call_bam_pickup(mode, ids_dict, output_dir, genomon_root, arg_samtools, arg_
         os.mkdir(output_dir)
         
     # tools
-    samtools = arg_samtools
-    if samtools == "":
-        samtools = tools.config_getstr(config, "tools", "samtools")
-        
-    bedtools = arg_bedtools
-    if bedtools == "":
-        bedtools = tools.config_getstr(config, "tools", "bedtools")
+    samtools = tools.config_getstr(config, "tools", "samtools")
+    bedtools = tools.config_getstr(config, "tools", "bedtools")
     
     for key in ids_dict:
         if len(ids_dict[key]) == 0:
@@ -166,7 +161,11 @@ def call_bam_pickup(mode, ids_dict, output_dir, genomon_root, arg_samtools, arg_
 def call_merge_result(mode, ids_dict, output_dir, genomon_root, config):
     
     print "=== [%s] merge result file. ===" % mode
-
+    
+    if config.getboolean("develop", "debug"):
+        import pprint 
+        pprint.pprint (ids_dict)
+    
     import genomon_post_analysis.subcode.merge as subcode_merge
     import merge
     
@@ -197,64 +196,6 @@ def call_merge_result(mode, ids_dict, output_dir, genomon_root, config):
 
 def get_sample_dic(mode, genomon_root, args, config, sample_conf):
     
-    ### for genomon-call ###############
-    def text_to_list(inputs, flg):
-        
-        if flg == False: return []
-        if len(inputs) == 0: return []
-
-        f = inputs.lstrip("'").lstrip('"').rstrip("'").rstrip('"').split(";")
-        
-        li = []
-        for item in f[0].split(","):
-            li.append(item.lstrip(" ").rstrip(" "))
-        
-        return li
-            
-    
-    if mode == "qc" or mode == "starqc":
-        sample_dict = {"all":[]}
-        sample_dict["all"] = text_to_list(args.input_file_case1, True)
-    
-    else:
-        sample_dict = {"all":[], "filt_all":[]}
-        
-        [section_in, section_out] = tools.get_section(mode)
-        
-        sample_dict["case1"] = text_to_list(args.input_file_case1, tools.config_getboolean(config, section_out, "output_case1"))
-        sample_dict["case2"] = text_to_list(args.input_file_case2, tools.config_getboolean(config, section_out, "output_case2"))
-        sample_dict["filt_case1"] = text_to_list(args.input_file_case1, tools.config_getboolean(config, section_out, "output_filt_case1"))
-        sample_dict["filt_case2"] = text_to_list(args.input_file_case2, tools.config_getboolean(config, section_out, "output_filt_case2"))
-        
-        if tools.config_getboolean(config, section_out, "output_all") == True:
-            sample_dict["all"].extend(sample_dict["case1"])
-            sample_dict["all"].extend(sample_dict["case2"])
-
-        if tools.config_getboolean(config, section_out, "output_filt_all") == True:
-            sample_dict["filt_all"].extend(sample_dict["filt_case1"])
-            sample_dict["filt_all"].extend(sample_dict["filt_case2"])
-                
-        if mode == "mutation" or mode == "sv":
-            sample_dict["case3"] = text_to_list(args.input_file_case3, tools.config_getboolean(config, section_out, "output_case3"))
-            sample_dict["case4"] = text_to_list(args.input_file_case4, tools.config_getboolean(config, section_out, "output_case4"))
-            sample_dict["filt_case3"] = text_to_list(args.input_file_case3, tools.config_getboolean(config, section_out, "output_filt_case3"))
-            sample_dict["filt_case4"] = text_to_list(args.input_file_case4, tools.config_getboolean(config, section_out, "output_filt_case4"))
-
-            if tools.config_getboolean(config, section_out, "output_all") == True:
-                sample_dict["all"].extend(sample_dict["case3"])
-                sample_dict["all"].extend(sample_dict["case4"])
-                
-            if tools.config_getboolean(config, section_out, "output_filt_all") == True:
-                sample_dict["filt_all"].extend(sample_dict["filt_case3"])
-                sample_dict["filt_all"].extend(sample_dict["filt_case4"])
-    ####################################
-    
-    num = 0
-    for key in sample_dict:
-        num += len(sample_dict[key])
-    
-    if num > 0: return sample_dict
-    
     ### for stand-alone ################
     def set_sample_4type(li, mode, config):
         
@@ -275,28 +216,28 @@ def get_sample_dic(mode, genomon_root, args, config, sample_conf):
                 else:
                     tmr_nrml_list.append(item[0])
         
-        sample_dict = {"case1":[], "case2":[], "case3":[], "case4":[], "all":[], "filt_case1":[], "filt_case2":[], "filt_case3":[], "filt_case4":[], "filt_all":[]}
+        sample_dict = {"raw_case1":[], "raw_case2":[], "raw_case3":[], "raw_case4":[], "raw_all":[], "filt_case1":[], "filt_case2":[], "filt_case3":[], "filt_case4":[], "filt_all":[]}
         
         [section_in, section_out] = tools.get_section(mode)
         
-        if tools.config_getboolean(config, section_out, "output_case1") == True: sample_dict["case1"].extend(tmr_nrml_list)
-        if tools.config_getboolean(config, section_out, "output_case2") == True: sample_dict["case2"].extend(tmr_nrml_none)
-        if tools.config_getboolean(config, section_out, "output_case3") == True: sample_dict["case3"].extend(tmr_none_list)
-        if tools.config_getboolean(config, section_out, "output_case4") == True: sample_dict["case4"].extend(tmr_none_none)
+        if tools.config_getboolean(config, section_out, "output_raw_case1") == True: sample_dict["raw_case1"].extend(tmr_nrml_list)
+        if tools.config_getboolean(config, section_out, "output_raw_case2") == True: sample_dict["raw_case2"].extend(tmr_nrml_none)
+        if tools.config_getboolean(config, section_out, "output_raw_case3") == True: sample_dict["raw_case3"].extend(tmr_none_list)
+        if tools.config_getboolean(config, section_out, "output_raw_case4") == True: sample_dict["raw_case4"].extend(tmr_none_none)
         if tools.config_getboolean(config, section_out, "output_filt_case1") == True: sample_dict["filt_case1"].extend(tmr_nrml_list)
         if tools.config_getboolean(config, section_out, "output_filt_case2") == True: sample_dict["filt_case2"].extend(tmr_nrml_none)
         if tools.config_getboolean(config, section_out, "output_filt_case3") == True: sample_dict["filt_case3"].extend(tmr_none_list)
         if tools.config_getboolean(config, section_out, "output_filt_case4") == True: sample_dict["filt_case4"].extend(tmr_none_none)
-        if tools.config_getboolean(config, section_out, "output_all") == True:
-            sample_dict["all"].extend(sample_dict["case1"])
-            sample_dict["all"].extend(sample_dict["case2"])
-            sample_dict["all"].extend(sample_dict["case3"])
-            sample_dict["all"].extend(sample_dict["case4"])
+        if tools.config_getboolean(config, section_out, "output_raw_all") == True:
+            sample_dict["raw_all"].extend(tmr_nrml_list)
+            sample_dict["raw_all"].extend(tmr_nrml_none)
+            sample_dict["raw_all"].extend(tmr_none_list)
+            sample_dict["raw_all"].extend(tmr_none_none)
         if tools.config_getboolean(config, section_out, "output_filt_all") == True:
-            sample_dict["filt_all"].extend(sample_dict["filt_case1"])
-            sample_dict["filt_all"].extend(sample_dict["filt_case2"])
-            sample_dict["filt_all"].extend(sample_dict["filt_case3"])
-            sample_dict["filt_all"].extend(sample_dict["filt_case4"])
+            sample_dict["filt_all"].extend(tmr_nrml_list)
+            sample_dict["filt_all"].extend(tmr_nrml_none)
+            sample_dict["filt_all"].extend(tmr_none_list)
+            sample_dict["filt_all"].extend(tmr_none_none)
                 
         return sample_dict
     
@@ -311,20 +252,20 @@ def get_sample_dic(mode, genomon_root, args, config, sample_conf):
             else:
                 tmr_list.append(item[0])
         
-        sample_dict = {"case1":[], "case2":[], "all":[], "filt_case1":[], "filt_case2":[], "filt_all":[]}
+        sample_dict = {"raw_case1":[], "raw_case2":[], "raw_all":[], "filt_case1":[], "filt_case2":[], "filt_all":[]}
         
         [section_in, section_out] = tools.get_section(mode)
         
-        if tools.config_getboolean(config, section_out, "output_case1") == True: sample_dict["case1"].extend(tmr_list)
-        if tools.config_getboolean(config, section_out, "output_case2") == True: sample_dict["case2"].extend(tmr_none)
+        if tools.config_getboolean(config, section_out, "output_raw_case1") == True: sample_dict["raw_case1"].extend(tmr_list)
+        if tools.config_getboolean(config, section_out, "output_raw_case2") == True: sample_dict["raw_case2"].extend(tmr_none)
         if tools.config_getboolean(config, section_out, "output_filt_case1") == True: sample_dict["filt_case1"].extend(tmr_list)
         if tools.config_getboolean(config, section_out, "output_filt_case2") == True: sample_dict["filt_case2"].extend(tmr_none)
-        if tools.config_getboolean(config, section_out, "output_all") == True:
-            sample_dict["all"].extend(sample_dict["case1"])
-            sample_dict["all"].extend(sample_dict["case2"])
+        if tools.config_getboolean(config, section_out, "output_raw_all") == True:
+            sample_dict["raw_all"].extend(tmr_list)
+            sample_dict["raw_all"].extend(tmr_none)
         if tools.config_getboolean(config, section_out, "output_filt_all") == True:
-            sample_dict["filt_all"].extend(sample_dict["filt_case1"])
-            sample_dict["filt_all"].extend(sample_dict["filt_case2"])
+            sample_dict["filt_all"].extend(tmr_list)
+            sample_dict["filt_all"].extend(tmr_none)
         
         return sample_dict
         
@@ -342,7 +283,7 @@ def get_sample_dic(mode, genomon_root, args, config, sample_conf):
         for item in sample_conf.qc:
             items.append(item)
         
-        sample_dict["all"] = items
+        sample_dict["raw_all"] = items
     ####################################
     
     return sample_dict
@@ -354,26 +295,19 @@ def main():
     parser = argparse.ArgumentParser(prog = "genomon_pa")
 
     parser.add_argument("--version", action = "version", version = tools.version_text())
-    parser.add_argument('mode', choices=['dna', 'rna', 'mutation', 'sv', 'qc', 'fusion', 'starqc'], help = "analysis type")
+    parser.add_argument('mode', choices=['mutation', 'sv', 'qc', 'fusion', 'starqc'], help = "analysis type")
     parser.add_argument("output_dir", help = "path to output-dir ", type = str)
     parser.add_argument("genomon_root", help = "path to Genomon-working-root", type = str)
     parser.add_argument("sample_sheet", help = "path to Genomon-samplesheet.csv", type = str)
     parser.add_argument("--config_file", help = "config file", type = str, default = "")
     
-    # for genomon-call
-    parser.add_argument("--input_file_case1", help = "sample IDs case1(pair and controlpanel), comma delimited.", type = str, default = "")
-    parser.add_argument("--input_file_case2", help = "sample IDs case2(pair and not controlpanel), comma delimited.", type = str, default = "")
-    parser.add_argument("--input_file_case3", help = "sample IDs case3(unpair and controlpanel), comma delimited.", type = str, default = "")
-    parser.add_argument("--input_file_case4", help = "sample IDs case4(unpair and not controlpanel), comma delimited.", type = str, default = "")
-    parser.add_argument("--samtools", help = "path to samtools", type = str, default = "")
-    parser.add_argument("--bedtools", help = "path to bedtools", type = str, default = "")
-    
     # for personal call
-    parser.add_argument('--submode', choices=['igv', ''], help = "analysis type", default = "")
+    parser.add_argument('--submode', choices=['igv', 'bam'], help = "analysis type", default = "")
     parser.add_argument("--merged_file", help = "path to merged result file, comma delimited.", type = str, default = "")
     
-    args = parser.parse_args(sys.argv[1:len(sys.argv)])
-    
+    #args = parser.parse_args(sys.argv[1:len(sys.argv)])
+    args, option_args = parser.parse_known_args(sys.argv[1:len(sys.argv)])
+
     # dirs
     output_dir = os.path.abspath(args.output_dir)
     if (os.path.exists(output_dir) == False):
@@ -384,39 +318,36 @@ def main():
     # config
     [config, conf_file] = tools.load_config(args.config_file)
     
+    for i in range(0, len(option_args), 2):
+        section = option_args[i].replace("--", "").split(":")
+        config.set(section[0], section[1], option_args[i+1])
+        
     sample_conf = capture.load_sample_conf(args.sample_sheet, False)
     if sample_conf == None:
         return
+
+    if config.getboolean("develop", "debug"):
+        import pprint 
+        print ("=== known_args ===")
+        pprint.pprint (args)
+        print ("=== option_args ===")
+        pprint.pprint (option_args)
+        print ("=== sample_conf.mutation_call ===")
+        pprint.pprint (sample_conf.mutation_call)
+        print ("=== sample_conf.sv_detection ===")
+        pprint.pprint (sample_conf.sv_detection)
+        print ("=== sample_conf.qc ===")
+        pprint.pprint (sample_conf.qc)
+        print ("=== sample_conf.fusion ===")
+        pprint.pprint (sample_conf.fusion)
     
     # call functions
-    if args.mode == "dna":
-        sample_dic = get_sample_dic("sv", genomon_root, args, config, sample_conf)
-        if tools.config_getboolean(config, "igv", "enable") == True:
-            call_image_capture("sv", sample_dic, output_dir, genomon_root, sample_conf, config)
-        if tools.config_getboolean(config, "bam", "enable") == True:
-            call_bam_pickup("sv", sample_dic, output_dir, genomon_root, args.samtools, args.bedtools, sample_conf, config)
-        call_merge_result("sv", sample_dic, output_dir, genomon_root, config)
-        
-        sample_dic = get_sample_dic("mutation", genomon_root, args, config, sample_conf)
-        if tools.config_getboolean(config, "igv", "enable") == True:
-            call_image_capture("mutation", sample_dic, output_dir, genomon_root, sample_conf, config)
-        if tools.config_getboolean(config, "bam", "enable") == True:
-            call_bam_pickup("mutation", sample_dic, output_dir, genomon_root, args.samtools, args.bedtools, sample_conf, config)
-        call_merge_result("mutation", sample_dic, output_dir, genomon_root, config)
-        
-        sample_dic = get_sample_dic("qc", genomon_root, args, config, sample_conf)
-        call_merge_result("qc", sample_dic, output_dir, genomon_root,  config)
-
-    elif args.mode == "rna":
-        sample_dic = get_sample_dic("fusion", genomon_root, args, config, sample_conf)
-        call_merge_result("fusion", sample_dic, output_dir, genomon_root,  config)
-
-        sample_dic = get_sample_dic("starqc", genomon_root, args, config, sample_conf)
-        call_merge_result("starqc", sample_dic, output_dir, genomon_root,  config)
-    
-    elif args.submode == "igv":
+    if args.submode == "igv":
         call_image_capture_merged(args.mode, args.merged_file, output_dir, genomon_root, sample_conf, config)
 
+    elif args.submode == "bam":
+        call_bam_pickup(args.mode,  sample_dic, output_dir, genomon_root, sample_conf, config)
+                
     else:
         sample_dic = get_sample_dic(args.mode, genomon_root, args, config, sample_conf)
             
@@ -426,10 +357,10 @@ def main():
             call_merge_result(args.mode, sample_dic, output_dir, genomon_root,  config)
         elif args.mode == "starqc":
             call_merge_result(args.mode, sample_dic, output_dir, genomon_root,  config)
-        else:
+        else:   # "sv" or "mutation"
             if tools.config_getboolean(config, "igv", "enable") == True:
                 call_image_capture(args.mode,  sample_dic, output_dir, genomon_root, sample_conf, config)
             if tools.config_getboolean(config, "bam", "enable") == True:
-                call_bam_pickup(args.mode,  sample_dic, output_dir, genomon_root, args.samtools, args.bedtools, sample_conf, config)
+                call_bam_pickup(args.mode,  sample_dic, output_dir, genomon_root, sample_conf, config)
             call_merge_result(args.mode, sample_dic, output_dir, genomon_root, config)
 

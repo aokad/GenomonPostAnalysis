@@ -1,5 +1,7 @@
+README.md
 genomon_pa
 genomon_post_analysis
+genomon_post_analysis.cfg
 setup.cfg
 setup.py
 genomon_post_analysis/__init__.py

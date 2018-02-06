@@ -1,0 +1,10 @@
+# Version: GenomonSV-0.4.2rc sv_utils-0.4.0beta2
+# Analysis Date: 2017-12-25 08:42:37
+# User: root
+Chr_1	Pos_1	Dir_1	Chr_2	Pos_2	Dir_2	Inserted_Seq	Variant_Type	Gene_1	Gene_2	Exon_1	Exon_2	Num_Tumor_Ref_Read_Pair	Num_Tumor_Var_Read_Pair	Tumor_VAF	Num_Control_Ref_Read_Pair	Num_Control_Var_Read_Pair	Control_VAF	Minus_Log_Fisher_P_value	Non-Matched_Control_Sample_With_Max_Junction	Num_Max_Non-Matched_Control_Junction	Max_Over_Hang_1	Max_Over_Hang_2
+11	2644790	+	11	2680137	-	---	deletion	KCNQ1OT1;KCNQ1	KCNQ1OT1;KCNQ1	KCNQ1OT1	KCNQ1OT1	79	101	0.5611	133	0	0.0	31.7916	---	0	357	468
+11	12553283	+	22	25051359	-	---	translocation	PARVA	POM121L10P	PARVA	POM121L10P	75	85	0.5313	130	0	0.0	28.0673	---	0	403	380
+22	27068016	-	22	27070655	-	---	inversion	MIAT	MIAT;MIATNB	MIAT	MIAT	18	59	0.7662	157	0	0.0	38.9489	---	0	344	370
+22	27068015	+	22	27070654	+	---	inversion	MIAT	MIAT;MIATNB	MIAT	MIAT	13	83	0.8646	152	0	0.0	51.779	---	0	342	377
+22	40725723	+	22	40728297	-	---	deletion	TNRC6B	TNRC6B	TNRC6B	TNRC6B	8	75	0.9036	118	0	0.0	45.8344	---	0	407	369
+22	44640224	-	22	44642022	+	---	tandem_duplication	KIAA1644	KIAA1644	KIAA1644	KIAA1644	141	217	0.6061	123	1	0.0081	37.7351	---	0	408	370

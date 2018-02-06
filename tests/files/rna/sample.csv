@@ -1,0 +1,15 @@
+[bam_import]
+tumor1,/path/to/bam
+tumor2,/path/to/bam
+dummy,/path/to/bam
+
+[fusion]
+tumor1,list
+tumor2,None
+
+[qc]
+tumor1
+tumor2
+
+[controlpanel]
+list,dummy
