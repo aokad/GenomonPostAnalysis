@@ -54,42 +54,23 @@ genomon_pa rna {output_dir} {genomon_root} {genomon_sample_sheet}
 ```
 $ genomon_pa --help
 usage: genomon_pa [-h] [--version] [--config_file CONFIG_FILE]
-                  [--input_file_case1 INPUT_FILE_CASE1]
-                  [--input_file_case2 INPUT_FILE_CASE2]
-                  [--input_file_case3 INPUT_FILE_CASE3]
-                  [--input_file_case4 INPUT_FILE_CASE4]
-                  [--samtools SAMTOOLS]
-                  [--bedtools BEDTOOLS]
                   {dna,rna,mutation,sv,qc,fusion,starqc}
                   output_dir
                   genomon_root
                   sample_sheet
 
 positional arguments:
-  {dna,rna,mutation,sv,qc,fusion,starqc}
-                        analysis type 欄外参照
+  {mutation,sv,qc,fusion,starqc}
+                        analysis type マージしたい結果
   output_dir            path to output-dir  ※ディレクトリ構成は 実行結果のディレクトリ 参照
   genomon_root          path to Genomon-working-root
   sample_sheet          path to Genomon-samplesheet.csv
 
 optional arguments:   欄外参照
-  --input_file_case1 INPUT_FILE_CASE1  sample IDs case1(pair and controlpanel), comma delimited.
-  --input_file_case2 INPUT_FILE_CASE2  sample IDs case2(pair and not controlpanel), comma delimited.
-  --input_file_case3 INPUT_FILE_CASE3  sample IDs case3(unpair and controlpanel), comma delimited.
-  --input_file_case4 INPUT_FILE_CASE4  sample IDs case4(unpair and not controlpanel), comma delimited.
   --config_file CONFIG_FILE            config file
-  --samtools SAMTOOLS                  path to samtools
-  --bedtools BEDTOOLS                  path to bedtools
   -h, --help                           show this help message and exit
   --version                            show programs version number and exit
 ```
-
-sub コマンド
-
- - dna: DNA解析結果(mutation, sv, qc) をまとめて実行
- - rna: RNA解析結果(fusion, starqc) をまとめて実行
- - mutation / sv / qc: (DNA) 各結果のみ
- - fusion / starqc: (RNA) 各結果のみ
 
  - `--config_file` 
 
@@ -98,23 +79,6 @@ sub コマンド
     デフォルトの設定ファイル `genomon_post_analysis.cfg` はgenomon_post_analysisインストールディレクトリ直下にあります。
 
     ※このファイルを編集しても変更は反映されません。--config_file オプションで変更したファイルを渡してください。
-
- - `--input_file_case1`
-
-    各caseのサンプルID（,区切り）
-    
-    Genomonからの呼び出し用。未設定時はsample_sheetから自動判定します。
-    
-    - case1...pairあり, controlpanelあり
-    - case2...pairあり, controlpanelなし
-    - case3...pairなし, controlpanelなし
-    - case4...pairなし, controlpanelあり
-    
-
- - `--samtools` / `--bedtools`
-
-    Genomonからの呼び出し用。未設定時はconfig_fileのパス([tools])を使用します。
-
 
 <br>
 <br>
