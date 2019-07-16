@@ -37,7 +37,7 @@ def image_capture(mode, sample_list, output_dir, genomon_root, sample_conf, conf
     capture.merge_capture_bat(files_capt, output_dir + "/capture_script/capture.bat", True)
 
 def call_image_capture(mode, ids_dict, output_dir, genomon_root, sample_conf, config):
-    print "=== [%s] create script file, for IGV image capture. ===" % mode
+    print ("=== [%s] create script file, for IGV image capture. ===" % mode)
 
     def image_capture(mode, sample_list, output_dir, genomon_root, sample_conf, config):
         
@@ -85,7 +85,7 @@ def call_image_capture(mode, ids_dict, output_dir, genomon_root, sample_conf, co
 
 def call_image_capture_merged(mode, merged_file, output_dir, genomon_root, sample_conf, config):
 
-    print "=== [%s] create script file, for IGV image capture. ===" % mode
+    print ("=== [%s] create script file, for IGV image capture. ===" % mode)
 
     if (os.path.exists(output_dir + "/capture") == False):
         os.mkdir(output_dir + "/capture")
@@ -103,7 +103,7 @@ def call_image_capture_merged(mode, merged_file, output_dir, genomon_root, sampl
 
 def call_bam_pickup(mode, ids_dict, output_dir, genomon_root, sample_conf, config):
 
-    print "=== [%s] create script file, for bam pick up. ===" % mode
+    print ("=== [%s] create script file, for bam pick up. ===" % mode)
     
     def bam_pickup(mode, sample_list, output_dir, genomon_root, samtools, bedtools, sample_conf, config):
         
@@ -160,7 +160,7 @@ def call_bam_pickup(mode, ids_dict, output_dir, genomon_root, sample_conf, confi
     
 def call_merge_result(mode, ids_dict, output_dir, genomon_root, config):
     
-    print "=== [%s] merge result file. ===" % mode
+    print ("=== [%s] merge result file. ===" % mode)
     
     if config.getboolean("develop", "debug"):
         import pprint 
@@ -346,6 +346,7 @@ def main():
         call_image_capture_merged(args.mode, args.merged_file, output_dir, genomon_root, sample_conf, config)
 
     elif args.submode == "bam":
+        sample_dic = get_sample_dic(args.mode, genomon_root, args, config, sample_conf)
         call_bam_pickup(args.mode,  sample_dic, output_dir, genomon_root, sample_conf, config)
                 
     else:
