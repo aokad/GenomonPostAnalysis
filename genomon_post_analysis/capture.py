@@ -136,7 +136,7 @@ snapshot {name}
         
         capt_list.append(fname)
         
-        if (chr1 == chr2) and ((long(end) - long(start)) < (width / 2)):
+        if (chr1 == chr2) and ((float(end) - float(start)) < (width / 2)):
             capt_text.append(cmd_capt.format(chr = chr1, start = start - width, end = start + width, name = fname + ".png"))
             lines_count += 1
         else:
@@ -258,7 +258,7 @@ snapshot {name}
         
         capt_list.append(fname)
         
-        if (chr1 == chr2) and ((long(end) - long(start)) < (width / 2)):
+        if (chr1 == chr2) and ((float(end) - float(start)) < (width / 2)):
             capt_text.append(cmd_capt.format(chr = chr1, start = start - width, end = start + width, name = fname + ".png"))
             lines_count += 1
         else:
@@ -477,4 +477,4 @@ def merge_pickup_script(files, output_file):
     f.close()
     os.rename(output_file + ".tmp", output_file)
     
-    os.chmod(output_file, 0744)
+    #os.chmod(output_file, 0744)

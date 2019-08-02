@@ -100,7 +100,7 @@ def _merge_metadata(files, option):
         values = {}
         for meta in meta_data:
             if meta[0] == header:
-                if values.has_key(meta[1]) == False:
+                if not meta[1] in values:
                     values[meta[1]] = []
                 values[meta[1]].append(meta[2])
                 
