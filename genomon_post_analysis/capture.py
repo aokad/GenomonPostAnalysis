@@ -9,7 +9,7 @@ import os
 import genomon_post_analysis.subcode.tools as tools
 
 def load_sample_conf(f, check):
-    import sample_conf
+    import genomon_post_analysis.sample_conf as sample_conf
     
     if os.path.exists(f) == False:
         print ("sample_sheet is none: %s" % (f))
@@ -437,7 +437,7 @@ def merge_capture_bat(files, output_file, delete_flg):
     
     for bat_file in files:
         if os.path.exists(bat_file) == False:
-            print "[WARNING] file is not exist. %s" % bat_file
+            print ("[WARNING] file is not exist. %s" % (bat_file))
             continue
         
         f_in = open(bat_file)
@@ -461,7 +461,7 @@ def merge_pickup_script(files, output_file):
     lines_counter = 0
     for bat_file in files:
         if os.path.exists(bat_file) == False:
-            print "[WARNING] file is not exist. %s" % bat_file
+            print ("[WARNING] file is not exist. %s" % (bat_file))
             continue
         
         write_lines.append("qsub %s\nsleep 1s\n" % bat_file)

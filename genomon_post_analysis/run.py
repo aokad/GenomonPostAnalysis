@@ -7,7 +7,7 @@ Created on Wed Dec 02 17:43:52 2015
 
 import os
 import genomon_post_analysis.subcode.tools as tools
-import capture
+import genomon_post_analysis.capture as capture
 
 def image_capture(mode, sample_list, output_dir, genomon_root, sample_conf, config):
     
@@ -168,7 +168,7 @@ def call_merge_result(mode, ids_dict, output_dir, genomon_root, config):
     print ("=== [%s] merge result file. ===" % mode)
 
     import genomon_post_analysis.subcode.merge as subcode_merge
-    import merge
+    import genomon_post_analysis.merge as merge
     
     [section_in, section_out] = tools.get_section(mode)
     suffix_u = tools.config_getstr(config, section_in, "suffix")

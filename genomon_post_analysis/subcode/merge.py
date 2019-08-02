@@ -7,7 +7,7 @@ Created on Wed Dec 02 17:43:52 2015
 $Id: merge.py 107 2016-05-26 08:24:48Z aokada $
 """
 
-import tools
+import genomon_post_analysis.subcode.tools as tools
 
 def _split_char(mode, config):
     [section_in, section_out] = tools.get_section(mode)
